@@ -24,8 +24,8 @@ import { CardHeader } from './styles'
 
 const STEPS = [
   { id: 0, name: 'Informações' },
-  { id: 1, name: 'Atividades' },
-  { id: 2, name: 'Modelos de Certificados' },
+  { id: 1, name: 'Modelos de Certificados' },
+  { id: 2, name: 'Atividades' },
   { id: 3, name: 'Pronto' }
 ]
 
@@ -86,7 +86,7 @@ const Publish: React.FC = () => {
   const handleNext = async () => {
     if (currentStep === STEPS.length - 1) {
       router.push(`/events/${event?.id}/info`)
-    } else if (currentStep === 2) {
+    } else if (currentStep === 3) {
       const success = await publish()
       if (success) setCurrentStep(currentStep + 1)
     } else {
@@ -137,13 +137,13 @@ const Publish: React.FC = () => {
                 <span>Concluir</span>
               </>
             )}
-            {currentStep === 2 && (
+            {currentStep === 3 && (
               <>
                 <FiCheck size={20} />
                 <span>Publicar</span>
               </>
             )}
-            {currentStep !== 2 && currentStep !== STEPS.length - 1 && (
+            {currentStep !== 3 && currentStep !== STEPS.length - 1 && (
               <>
                 <FiChevronRight size={20} />
                 <span>Avançar</span>
@@ -155,10 +155,10 @@ const Publish: React.FC = () => {
         {currentStep === 0 && (
           <EventInfo edit={false} event={event} setEvent={setEvent} />
         )}
-        {currentStep === 1 && (
+        {currentStep === 1 && <EventCertificate event={event} />}
+        {currentStep === 2 && (
           <EventActivity addToast={addToast} event={event} />
         )}
-        {currentStep === 2 && <EventCertificate event={event} />}
         {currentStep === 3 && <PublishSuccess />}
       </Card>
     </Container>
