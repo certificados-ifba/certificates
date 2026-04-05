@@ -90,8 +90,6 @@ export class UserService {
       UserModel.personal_data.phone = userParams.personal_data.phone
     if (userParams?.email !== undefined) {
       UserModel.email = userParams.email
-      UserModel.is_confirmed = false
-      UserModel.password = securePassword()
     }
 
     return UserModel.save()
