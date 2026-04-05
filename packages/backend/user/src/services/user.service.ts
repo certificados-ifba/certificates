@@ -8,7 +8,6 @@ import { IUserListParams } from '../interfaces/user-list-params.interface'
 import { DataResponse } from '../interfaces/user-list-response.interface'
 import { IUserUpdateParams } from '../interfaces/user-update-params.interface'
 import { IUser } from '../interfaces/user.interface'
-import { securePassword } from '../utils/generators'
 import { ConfigService } from './config/config.service'
 
 @Injectable()

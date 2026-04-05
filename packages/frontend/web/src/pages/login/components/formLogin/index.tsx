@@ -80,7 +80,7 @@ export const FormLogin: React.FC<Props> = ({ setForgotPassword }) => {
             label="E-mail"
             name="login"
             icon={FiMail}
-            type="email"
+            type="email-masked"
             placeholder="Digite seu e-mail"
             autoComplete="username"
             marginBottom="sm"

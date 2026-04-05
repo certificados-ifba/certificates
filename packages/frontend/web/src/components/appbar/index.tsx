@@ -1,12 +1,12 @@
 import { IUser } from '@dtos'
-import { useAuth, SidebarContext } from '@providers'
+import { SidebarContext, useAuth } from '@providers'
 import { capitalize, getRole } from '@utils'
 import { useRouter } from 'next/router'
-import { useEffect, useCallback, useContext, useState } from 'react'
-import { FiLogOut, FiMenu, FiEdit } from 'react-icons/fi'
+import { useCallback, useContext, useEffect, useState } from 'react'
+import { FiEdit, FiLogOut, FiMenu } from 'react-icons/fi'
 
 import { ProfileModal } from '../profileModal'
-import { Container, Button, UserInfo, Info, Avatar, Right, AvatarDropdown, AvatarMenuItem } from './styles'
+import { Avatar, AvatarDropdown, AvatarMenuItem, Button, Container, Info, Right, UserInfo } from './styles'
 
 export const Appbar: React.FC = () => {
   const [loading, setLoading] = useState(false)
