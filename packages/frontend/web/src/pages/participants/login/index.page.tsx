@@ -39,10 +39,8 @@ const Login: React.FC = () => {
       const val = e.target.value // YYYY-MM-DD
       if (!val) return
       const [year, month, day] = val.split('-')
-      const inputEl = formRef.current?.getFieldRef('dob') as HTMLInputElement
-      if (inputEl) {
-        inputEl.value = `${day}/${month}/${year}`
-      }
+      const formatted = `${day}/${month}/${year}`
+      formRef.current?.setFieldValue('dob', formatted)
     },
     []
   )
@@ -157,8 +155,7 @@ const Login: React.FC = () => {
                   marginBottom="sm"
                   name="dob"
                   label="Data de Nascimento"
-                  type="dob"
-                  inputMode="numeric"
+                  type="dob-masked"
                   placeholder="DD/MM/AAAA"
                   disabled={loading}
                 />
@@ -176,7 +173,7 @@ const Login: React.FC = () => {
                   title="Selecionar data"
                   style={{
                     position: 'absolute',
-                    right: 10,
+                    right: 38,
                     bottom: 18,
                     transform: 'translateY(50%)',
                     background: 'none',

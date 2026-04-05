@@ -44,6 +44,7 @@ export const Input: React.FC<Props> = ({
   const secure = type === 'password'
   const maskedEmail = type === 'email-masked'
   const maskedCpf = type === 'cpf-masked'
+  const maskedDob = type === 'dob-masked'
 
   const [inputState, setInputState] = useState<'isFilled' | 'isFocused' | ''>(
     ''
@@ -51,15 +52,19 @@ export const Input: React.FC<Props> = ({
   const [isShowPass, setIsShowPass] = useState(false)
   const [isShowEmail, setIsShowEmail] = useState(false)
   const [isCpfShown, setIsCpfShown] = useState(false)
+  const [isDobShown, setIsDobShown] = useState(false)
 
   const inputRef = useRef<HTMLInputElement | HTMLTextAreaElement>(null)
   const emailRealRef = useRef('')
   const isShowEmailRef = useRef(false)
   const cpfRealRef = useRef('')
   const isCpfShownRef = useRef(false)
+  const dobRealRef = useRef('')
+  const isDobShownRef = useRef(false)
 
   useEffect(() => { isShowEmailRef.current = isShowEmail }, [isShowEmail])
   useEffect(() => { isCpfShownRef.current = isCpfShown }, [isCpfShown])
+  useEffect(() => { isDobShownRef.current = isDobShown }, [isDobShown])
 
   const maskEmail = useCallback((value: string): string => {
     if (!value) return ''
@@ -83,6 +88,20 @@ export const Input: React.FC<Props> = ({
   // Map raw digit index → formatted CPF cursor position
   const rawToFmt = useCallback((r: number) =>
     r + (r >= 3 ? 1 : 0) + (r >= 6 ? 1 : 0) + (r >= 9 ? 1 : 0), [])
+
+  // DOB format: "DD/MM/YYYY" → "**/**/YYYY" (positions 0-1 and 3-4 masked)
+  const maskDob = useCallback((value: string): string => {
+    if (!value) return ''
+    return value.split('').map((c, i) => ((i >= 0 && i <= 1) || (i >= 3 && i <= 4)) ? '*' : c).join('')
+  }, [])
+
+  // Map formatted DOB cursor position → raw digit index (separators at 2 and 5)
+  const fmtToRawDob = useCallback((p: number) =>
+    p - (p > 2 ? 1 : 0) - (p > 5 ? 1 : 0), [])
+
+  // Map raw digit index → formatted DOB cursor position
+  const rawToFmtDob = useCallback((r: number) =>
+    r + (r >= 2 ? 1 : 0) + (r >= 4 ? 1 : 0), [])
 
   const { fieldName, defaultValue, registerField, error } = useField(name)
 
@@ -121,6 +140,23 @@ export const Input: React.FC<Props> = ({
           setInputState('')
         }
       })
+    } else if (maskedDob) {
+      registerField<string>({
+        name: fieldName,
+        ref: inputRef.current,
+        getValue: () => dobRealRef.current,
+        setValue: (_ref, value) => {
+          dobRealRef.current = value || ''
+          if (inputRef.current)
+            inputRef.current.value = isDobShownRef.current ? (value || '') : maskDob(value || '')
+          setInputState(value ? 'isFilled' : '')
+        },
+        clearValue: () => {
+          dobRealRef.current = ''
+          if (inputRef.current) inputRef.current.value = ''
+          setInputState('')
+        }
+      })
     } else {
       registerField<string>({
         name: fieldName,
@@ -136,7 +172,7 @@ export const Input: React.FC<Props> = ({
         }
       })
     }
-  }, [fieldName, registerField, maskedEmail, maskEmail, maskedCpf, maskCpf])
+  }, [fieldName, registerField, maskedEmail, maskEmail, maskedCpf, maskCpf, maskedDob, maskDob])
 
   const handleInputFocus = useCallback(() => {
     setInputState('isFocused')
@@ -174,6 +210,70 @@ export const Input: React.FC<Props> = ({
       return next
     })
   }, [maskCpf])
+
+  const handleToggleShowDob = useCallback(() => {
+    setIsDobShown(prev => {
+      const next = !prev
+      isDobShownRef.current = next
+      if (inputRef.current) {
+        const el = inputRef.current as HTMLInputElement
+        el.value = next ? dobRealRef.current : maskDob(dobRealRef.current)
+      }
+      return next
+    })
+  }, [maskDob])
+
+  const handleDobKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (['Tab', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End'].includes(e.key)) return
+      if (e.ctrlKey || e.metaKey) return
+      e.preventDefault()
+      const input = e.currentTarget
+      const fmtPos = input.selectionStart ?? 0
+      const fmtPosEnd = input.selectionEnd ?? fmtPos
+      let rawDigits = dobRealRef.current.replace(/\D/g, '')
+      let rawPos = fmtToRawDob(fmtPos)
+      let rawPosEnd = fmtToRawDob(fmtPosEnd)
+      let newCursorRaw = rawPos
+      if (e.key === 'Backspace') {
+        if (rawPos !== rawPosEnd) { rawDigits = rawDigits.slice(0, rawPos) + rawDigits.slice(rawPosEnd); newCursorRaw = rawPos }
+        else if (rawPos > 0) { rawDigits = rawDigits.slice(0, rawPos - 1) + rawDigits.slice(rawPos); newCursorRaw = rawPos - 1 }
+      } else if (e.key === 'Delete') {
+        if (rawPos !== rawPosEnd) { rawDigits = rawDigits.slice(0, rawPos) + rawDigits.slice(rawPosEnd); newCursorRaw = rawPos }
+        else if (rawPos < rawDigits.length) { rawDigits = rawDigits.slice(0, rawPos) + rawDigits.slice(rawPos + 1); newCursorRaw = rawPos }
+      } else if (/^\d$/.test(e.key)) {
+        if (rawDigits.length >= 8 && rawPos === rawPosEnd) return
+        rawDigits = (rawDigits.slice(0, rawPos) + e.key + rawDigits.slice(rawPosEnd)).slice(0, 8)
+        newCursorRaw = rawPos + 1
+      } else { return }
+      const newFormatted = formatDob(rawDigits)
+      dobRealRef.current = newFormatted
+      input.value = isDobShownRef.current ? newFormatted : maskDob(newFormatted)
+      setInputState(rawDigits ? 'isFilled' : '')
+      const newFmtCursor = rawToFmtDob(Math.min(newCursorRaw, newFormatted.replace(/\D/g, '').length))
+      requestAnimationFrame(() => { input.setSelectionRange(newFmtCursor, newFmtCursor) })
+    },
+    [maskDob, fmtToRawDob, rawToFmtDob]
+  )
+
+  const handleDobPaste = useCallback(
+    (e: React.ClipboardEvent<HTMLInputElement>) => {
+      e.preventDefault()
+      const digits = e.clipboardData.getData('text').replace(/\D/g, '')
+      const input = e.currentTarget
+      const rawPos = fmtToRawDob(input.selectionStart ?? 0)
+      const rawPosEnd = fmtToRawDob(input.selectionEnd ?? rawPos)
+      const rawDigits = dobRealRef.current.replace(/\D/g, '')
+      const newRaw = (rawDigits.slice(0, rawPos) + digits + rawDigits.slice(rawPosEnd)).slice(0, 8)
+      const newFormatted = formatDob(newRaw)
+      dobRealRef.current = newFormatted
+      input.value = isDobShownRef.current ? newFormatted : maskDob(newFormatted)
+      setInputState(newRaw ? 'isFilled' : '')
+      const newFmtCursor = rawToFmtDob(Math.min(rawPos + digits.length, newRaw.length))
+      requestAnimationFrame(() => { input.setSelectionRange(newFmtCursor, newFmtCursor) })
+    },
+    [maskDob, fmtToRawDob, rawToFmtDob]
+  )
 
   const handleCpfKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -304,6 +404,22 @@ export const Input: React.FC<Props> = ({
     }
   }, [inputState])
 
+  const dobMaskedProps: any = {
+    ...restAux,
+    onFocus: handleInputFocus,
+    onBlur: handleInputBlur,
+    onKeyDown: handleDobKeyDown,
+    onPaste: handleDobPaste,
+    ref: inputRef,
+    id: fieldName,
+    'aria-label': fieldName,
+    type: 'text',
+    autoComplete: 'off',
+    inputMode: 'numeric',
+    size: 1,
+    defaultValue: ''
+  }
+
   const cpfMaskedProps: any = {
     ...restAux,
     onFocus: handleInputFocus,
@@ -368,6 +484,8 @@ export const Input: React.FC<Props> = ({
             <input {...emailProps} />
           ) : maskedCpf ? (
             <input {...cpfMaskedProps} />
+          ) : maskedDob ? (
+            <input {...dobMaskedProps} />
           ) : (
             <input {...(props as InputProps)} />
           )}
@@ -384,6 +502,11 @@ export const Input: React.FC<Props> = ({
           {maskedCpf && (
             <SecureToggle onClick={handleToggleShowCpf}>
               {isCpfShown ? <FiEye size={20} /> : <FiEyeOff size={20} />}
+            </SecureToggle>
+          )}
+          {maskedDob && (
+            <SecureToggle onClick={handleToggleShowDob}>
+              {isDobShown ? <FiEye size={20} /> : <FiEyeOff size={20} />}
             </SecureToggle>
           )}
         </fieldset>
