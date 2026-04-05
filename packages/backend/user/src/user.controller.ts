@@ -475,228 +475,233 @@ export class UserController {
           } else if (createdUser.email) {
             const userLink = await this.userService.createUserLink(
               createdUser.id,
-              Date.now() + 48 * 60 * 60 * 1000,
-              template: '/templates/confirm_email',
-              context: {
-              name: createdUser.name,
-              email: createdUser.email,
-              link: this.userService.getParticipantConfirmationLink(userLink.link),
-              site: this.userService.getWebUrl()
-            }
+              Date.now() + 48 * 60 * 60 * 1000
+            )
+            this.mailerServiceClient
+              .send('mail_send', {
+                to: createdUser.email,
+                subject: 'E-mail de Confirmação',
+                template: '/templates/confirm_email',
+                context: {
+                  name: createdUser.name,
+                  email: createdUser.email,
+                  link: this.userService.getParticipantConfirmationLink(userLink.link),
+                  site: this.userService.getWebUrl()
+                }
               })
               .toPromise()
-        }
+          }
         } catch (e) {
+          result = {
+            status: HttpStatus.PRECONDITION_FAILED,
+            message: 'user_create_precondition_failed',
+            data: null,
+            errors: e.errors
+          }
+        }
+      }
+    } else {
+      result = {
+        status: HttpStatus.BAD_REQUEST,
+        message: 'user_create_bad_request',
+        data: null,
+        errors: null
+      }
+    }
+
+    return result
+  }
+
+  @MessagePattern('user_update_by_id')
+  public async userUpdateById(params: {
+    user: IUserUpdateParams
+    id: string
+  }): Promise<IUserUpdateByIdResponse> {
+    let result: IUserUpdateByIdResponse
+    if (params.id) {
+      try {
+        const user = await this.userService.searchUserById(params.id)
+        if (user) {
+          if (user.personal_data.cpf)
+            params.user.personal_data.cpf = user.personal_data.cpf
+
+          const updatedUser = Object.assign(user, params.user)
+
+          if (params.user.email && params.user.email !== user.email) {
+            const usersWithEmail = await this.userService.searchUserByEmail(
+              params.user.email
+            )
+            if (params.user.email && usersWithEmail) {
+              return {
+                status: HttpStatus.CONFLICT,
+                message: 'user_update_by_id_conflict',
+                user: null,
+                errors: {
+                  email: {
+                    message: 'E-mail already registered',
+                    path: 'email'
+                  }
+                }
+              }
+            }
+            if (user.role === 'PARTICIPANT') {
+              updatedUser.is_confirmed = false
+            }
+          }
+          await this.userService.updateUserById(updatedUser.id, updatedUser)
+          if (
+            params.user.email &&
+            params.user.email !== user.email &&
+            user.role === 'PARTICIPANT' &&
+            updatedUser.email
+          ) {
+            const userLink = await this.userService.createUserLink(
+              updatedUser.id,
+              Date.now() + 48 * 60 * 60 * 1000
+            )
+            this.mailerServiceClient
+              .send('mail_send', {
+                to: updatedUser.email,
+                subject: 'Confirme seu novo e-mail',
+                template: '/templates/confirm_email',
+                context: {
+                  name: updatedUser.name,
+                  email: updatedUser.email,
+                  link: this.userService.getParticipantConfirmationLink(userLink.link),
+                  site: this.userService.getWebUrl()
+                }
+              })
+              .toPromise()
+          }
+          result = {
+            status: HttpStatus.OK,
+            message: 'user_update_by_id_success',
+            user: updatedUser,
+            errors: null
+          }
+        } else {
+          result = {
+            status: HttpStatus.NOT_FOUND,
+            message: 'user_update_by_id_not_found',
+            user: null,
+            errors: null
+          }
+        }
+      } catch (e) {
         result = {
           status: HttpStatus.PRECONDITION_FAILED,
-          message: 'user_create_precondition_failed',
-          data: null,
+          message: 'user_update_by_id_precondition_failed',
+          user: null,
           errors: e.errors
         }
       }
-    }
-  } else {
-  result = {
-    status: HttpStatus.BAD_REQUEST,
-    message: 'user_create_bad_request',
-    data: null,
-    errors: null
-  }
-}
-
-return result
-  }
-
-@MessagePattern('user_update_by_id')
-public async userUpdateById(params: {
-  user: IUserUpdateParams
-    id: string
-}): Promise < IUserUpdateByIdResponse > {
-  let result: IUserUpdateByIdResponse
-    if(params.id) {
-  try {
-    const user = await this.userService.searchUserById(params.id)
-    if (user) {
-      if (user.personal_data.cpf)
-        params.user.personal_data.cpf = user.personal_data.cpf
-
-      const updatedUser = Object.assign(user, params.user)
-
-      if (params.user.email && params.user.email !== user.email) {
-        const usersWithEmail = await this.userService.searchUserByEmail(
-          params.user.email
-        )
-        if (params.user.email && usersWithEmail) {
-          return {
-            status: HttpStatus.CONFLICT,
-            message: 'user_update_by_id_conflict',
-            user: null,
-            errors: {
-              email: {
-                message: 'E-mail already registered',
-                path: 'email'
-              }
-            }
-          }
-        }
-        if (user.role === 'PARTICIPANT') {
-          updatedUser.is_confirmed = false
-        }
-      }
-      await this.userService.updateUserById(updatedUser.id, updatedUser)
-      if (
-        params.user.email &&
-        params.user.email !== user.email &&
-        user.role === 'PARTICIPANT' &&
-        updatedUser.email
-      ) {
-        const userLink = await this.userService.createUserLink(
-          updatedUser.id,
-          Date.now() + 48 * 60 * 60 * 1000
-        )
-        this.mailerServiceClient
-          .send('mail_send', {
-            to: updatedUser.email,
-            subject: 'Confirme seu novo e-mail',
-            template: '/templates/confirm_email',
-            context: {
-              name: updatedUser.name,
-              email: updatedUser.email,
-              link: this.userService.getParticipantConfirmationLink(userLink.link),
-              site: this.userService.getWebUrl()
-            }
-          })
-          .toPromise()
-      }
-      result = {
-        status: HttpStatus.OK,
-        message: 'user_update_by_id_success',
-        user: updatedUser,
-        errors: null
-      }
     } else {
       result = {
-        status: HttpStatus.NOT_FOUND,
-        message: 'user_update_by_id_not_found',
+        status: HttpStatus.BAD_REQUEST,
+        message: 'user_update_by_id_bad_request',
         user: null,
         errors: null
       }
     }
-  } catch (e) {
-    result = {
-      status: HttpStatus.PRECONDITION_FAILED,
-      message: 'user_update_by_id_precondition_failed',
-      user: null,
-      errors: e.errors
-    }
-  }
-} else {
-  result = {
-    status: HttpStatus.BAD_REQUEST,
-    message: 'user_update_by_id_bad_request',
-    user: null,
-    errors: null
-  }
-}
-
-return result
-  }
-
-@MessagePattern('user_delete_by_id')
-public async userDeleteForUser(params: {
-  id: string
-    participant?: boolean
-}): Promise < IUserDeleteResponse > {
-  let result: IUserDeleteResponse
-
-    if(params && params.id) {
-  try {
-    const user = await this.userService.searchUserById(params.id)
-
-    if (params.participant && user.role !== 'PARTICIPANT')
-      throw new Error('Not allowed')
-
-    if (user) {
-      await this.userService.removeUserById(params.id)
-      result = {
-        status: HttpStatus.OK,
-        message: 'user_delete_by_id_success',
-        errors: null
-      }
-    } else {
-      result = {
-        status: HttpStatus.NOT_FOUND,
-        message: 'user_delete_by_id_not_found',
-        errors: null
-      }
-    }
-  } catch (e) {
-    result = {
-      status: HttpStatus.FORBIDDEN,
-      message: 'user_delete_by_id_forbidden',
-      errors: null
-    }
-  }
-} else {
-  result = {
-    status: HttpStatus.BAD_REQUEST,
-    message: 'user_delete_by_id_bad_request',
-    errors: null
-  }
-}
-
-return result
-  }
-
-@MessagePattern('participant_registered')
-public async getParticipantRegistered(): Promise <
-  IParticipantRegisteredResponse
-  > {
-  const quantity = await this.userService.getParticipantRegistered()
-
-    return {
-    status: HttpStatus.OK,
-    message: 'get_participant_registered_success',
-    data: quantity
-  }
-}
-
-@MessagePattern('participant_confirm')
-public async confirmParticipant(link: string): Promise < IUserConfirmResponse > {
-  let result: IUserConfirmResponse
-
-    if(link) {
-    const userLink = await this.userService.getUserLink(link)
-    if (userLink) {
-      const user = await this.userService.updateUserById(userLink.user, {
-        is_confirmed: true
-      })
-      await this.userService.updateUserLinkById(userLink.id, {
-        is_used: true
-      })
-      result = {
-        status: HttpStatus.OK,
-        message: 'participant_confirm_success',
-        user,
-        errors: null
-      }
-    } else {
-      result = {
-        status: HttpStatus.NOT_FOUND,
-        message: 'participant_confirm_not_found',
-        user: null,
-        errors: null
-      }
-    }
-  } else {
-    result = {
-      status: HttpStatus.BAD_REQUEST,
-      message: 'participant_confirm_bad_request',
-      user: null,
-      errors: null
-    }
-  }
 
     return result
-}
+  }
+
+  @MessagePattern('user_delete_by_id')
+  public async userDeleteForUser(params: {
+    id: string
+    participant?: boolean
+  }): Promise<IUserDeleteResponse> {
+    let result: IUserDeleteResponse
+
+    if (params && params.id) {
+      try {
+        const user = await this.userService.searchUserById(params.id)
+
+        if (params.participant && user.role !== 'PARTICIPANT')
+          throw new Error('Not allowed')
+
+        if (user) {
+          await this.userService.removeUserById(params.id)
+          result = {
+            status: HttpStatus.OK,
+            message: 'user_delete_by_id_success',
+            errors: null
+          }
+        } else {
+          result = {
+            status: HttpStatus.NOT_FOUND,
+            message: 'user_delete_by_id_not_found',
+            errors: null
+          }
+        }
+      } catch (e) {
+        result = {
+          status: HttpStatus.FORBIDDEN,
+          message: 'user_delete_by_id_forbidden',
+          errors: null
+        }
+      }
+    } else {
+      result = {
+        status: HttpStatus.BAD_REQUEST,
+        message: 'user_delete_by_id_bad_request',
+        errors: null
+      }
+    }
+
+    return result
+  }
+
+  @MessagePattern('participant_registered')
+  public async getParticipantRegistered(): Promise<
+    IParticipantRegisteredResponse
+  > {
+    const quantity = await this.userService.getParticipantRegistered()
+
+    return {
+      status: HttpStatus.OK,
+      message: 'get_participant_registered_success',
+      data: quantity
+    }
+  }
+
+  @MessagePattern('participant_confirm')
+  public async confirmParticipant(link: string): Promise<IUserConfirmResponse> {
+    let result: IUserConfirmResponse
+
+    if (link) {
+      const userLink = await this.userService.getUserLink(link)
+      if (userLink) {
+        const user = await this.userService.updateUserById(userLink.user, {
+          is_confirmed: true
+        })
+        await this.userService.updateUserLinkById(userLink.id, {
+          is_used: true
+        })
+        result = {
+          status: HttpStatus.OK,
+          message: 'participant_confirm_success',
+          user,
+          errors: null
+        }
+      } else {
+        result = {
+          status: HttpStatus.NOT_FOUND,
+          message: 'participant_confirm_not_found',
+          user: null,
+          errors: null
+        }
+      }
+    } else {
+      result = {
+        status: HttpStatus.BAD_REQUEST,
+        message: 'participant_confirm_bad_request',
+        user: null,
+        errors: null
+      }
+    }
+
+    return result
+  }
 }
