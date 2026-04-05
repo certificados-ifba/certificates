@@ -16,11 +16,11 @@ import Head from 'next/head'
 import { useRouter } from 'next/router'
 import { useCallback, useRef, useState } from 'react'
 import {
-  FiSearch,
-  FiCreditCard,
   FiCalendar,
+  FiCheck,
+  FiCreditCard,
   FiLogIn,
-  FiCheck
+  FiSearch
 } from 'react-icons/fi'
 import * as Yup from 'yup'
 
@@ -29,9 +29,33 @@ import { Container, FormArea, TopButton } from './styles'
 const Login: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(false)
   const formRef = useRef<FormHandles>(null)
+  const datePickerRef = useRef<HTMLInputElement>(null)
   const router = useRouter()
   const { addToast } = useToast()
   const { auth } = useAuth()
+
+  const handleDatePick = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const val = e.target.value // YYYY-MM-DD
+      if (!val) return
+      const [year, month, day] = val.split('-')
+      const inputEl = formRef.current?.getFieldRef('dob') as HTMLInputElement
+      if (inputEl) {
+        inputEl.value = `${day}/${month}/${year}`
+      }
+    },
+    []
+  )
+
+  const handleOpenPicker = useCallback(() => {
+    const picker = datePickerRef.current
+    if (!picker) return
+    try {
+      picker.showPicker?.()
+    } catch {
+      picker.click()
+    }
+  }, [])
 
   const handleSubmit = useCallback(
     async dataForm => {
@@ -46,15 +70,18 @@ const Login: React.FC = () => {
             )
             .test('cpf-is-valid', 'CPF precisa ser válido', isValidCpf)
             .required('Digite o seu CPF'),
-          dob: Yup.string().required('Selecione a sua data de nascimento'),
+          dob: Yup.string()
+            .matches(/^\d{2}\/\d{2}\/\d{4}$/, 'Digite a data no formato DD/MM/AAAA')
+            .required('Digite a sua data de nascimento'),
           token: Yup.string().required('Captcha é obrigatório')
         })
         await schema.validate(dataForm, {
           abortEarly: false
         })
+        const [day, month, year] = dataForm.dob.split('/')
         await auth({
           cpf: removeMask(dataForm.cpf),
-          dob: dataForm.dob,
+          dob: `${year}-${month}-${day}`,
           token: dataForm.token
         })
         setLoading(false)
@@ -121,17 +148,49 @@ const Login: React.FC = () => {
                 label="CPF"
                 placeholder="CPF"
                 type="cpf"
+                inputMode="numeric"
                 icon={FiCreditCard}
                 disabled={loading}
               />
-              <Input
-                icon={FiCalendar}
-                marginBottom="sm"
-                name="dob"
-                label="Data de Nascimento"
-                type="date"
-                disabled={loading}
-              />
+              <div style={{ position: 'relative' }}>
+                <Input
+                  icon={FiCalendar}
+                  marginBottom="sm"
+                  name="dob"
+                  label="Data de Nascimento"
+                  type="dob"
+                  inputMode="numeric"
+                  placeholder="DD/MM/AAAA"
+                  disabled={loading}
+                />
+                <input
+                  ref={datePickerRef}
+                  type="date"
+                  tabIndex={-1}
+                  onChange={handleDatePick}
+                  style={{ position: 'absolute', opacity: 0, width: 1, height: 1, top: 0, right: 0, pointerEvents: 'none' }}
+                />
+                <button
+                  type="button"
+                  onClick={() => handleOpenPicker()}
+                  disabled={loading}
+                  title="Selecionar data"
+                  style={{
+                    position: 'absolute',
+                    right: 10,
+                    bottom: 18,
+                    transform: 'translateY(50%)',
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    padding: 4,
+                    color: '#888',
+                    lineHeight: 1
+                  }}
+                >
+                  <FiCalendar size={16} />
+                </button>
+              </div>
               <Captcha name="token" />
               <Row>
                 <Button

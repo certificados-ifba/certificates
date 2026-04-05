@@ -46,6 +46,13 @@ export const isDate = (value: string): boolean => {
   return d.toISOString().slice(0, 10) === value
 }
 
+export const formatDob = (value: string): string =>
+  value
+    .replace(/\D/g, '')
+    .replace(/(\d{2})(\d)/, '$1/$2')
+    .replace(/(\d{2})(\d)/, '$1/$2')
+    .replace(/(\d{4})\d+?$/, '$1')
+
 export const removeMask = (value: string): string =>
   value.replace(/[^\d]+/g, '')
 

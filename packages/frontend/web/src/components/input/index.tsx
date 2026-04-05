@@ -1,5 +1,5 @@
 import { useField } from '@unform/core'
-import { formatCpf, formatPhone } from '@utils'
+import { formatCpf, formatDob, formatPhone } from '@utils'
 import {
   InputHTMLAttributes,
   useCallback,
@@ -10,7 +10,7 @@ import {
 import { IconBaseProps } from 'react-icons'
 import { FiAlertCircle, FiEye, FiEyeOff } from 'react-icons/fi'
 
-import { Container, Label, Error, SecureToggle } from './styles'
+import { Container, Error, Label, SecureToggle } from './styles'
 
 interface BaseProps<Multiline = false>
   extends InputHTMLAttributes<HTMLInputElement> {
@@ -85,8 +85,9 @@ export const Input: React.FC<Props> = ({
       if (type === 'cpf') {
         inputRef.current.value = formatCpf(inputRef.current.value)
       } else if (type === 'phone') {
-        // if (inputRef.current.value.length > 3)
         inputRef.current.value = formatPhone(inputRef.current.value)
+      } else if (type === 'dob') {
+        inputRef.current.value = formatDob(inputRef.current.value)
       }
   }, [type])
 
@@ -105,7 +106,7 @@ export const Input: React.FC<Props> = ({
     ref: inputRef,
     id: fieldName,
     'aria-label': fieldName,
-    type: isShowPass ? 'text' : type,
+    type: isShowPass ? 'text' : (type === 'dob' || type === 'cpf' || type === 'phone') ? 'text' : type,
     size: 1,
     defaultValue
   }
