@@ -522,8 +522,23 @@ export class UserController {
       try {
         const user = await this.userService.searchUserById(params.id)
         if (user) {
-          if (user.personal_data.cpf)
-            params.user.personal_data.cpf = user.personal_data.cpf
+          const newCpf = params.user?.personal_data?.cpf
+          if (newCpf && newCpf !== user.personal_data?.cpf) {
+            const usersWithCPF = await this.userService.searchUserByCpf(newCpf)
+            if (usersWithCPF) {
+              return {
+                status: HttpStatus.CONFLICT,
+                message: 'user_update_by_id_conflict',
+                user: null,
+                errors: {
+                  cpf: {
+                    message: 'CPF already registered',
+                    path: 'cpf'
+                  }
+                }
+              }
+            }
+          }
 
           const updatedUser = Object.assign(user, params.user)
 

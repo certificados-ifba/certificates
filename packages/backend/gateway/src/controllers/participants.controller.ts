@@ -26,6 +26,7 @@ import * as parser from 'ua-parser-js'
 
 import { Authorization } from '../decorators/authorization.decorator'
 import { Permission } from '../decorators/permission.decorator'
+import { IServiceCertificateListResponse } from '../interfaces/certificate/service-certificate-list-response.interface'
 import { IAuthorizedRequest } from '../interfaces/common/authorized-request.interface'
 import { CreateParticipantResponseDto } from '../interfaces/participant/dto/create-participant-response.dto'
 import { CreateParticipantDto } from '../interfaces/participant/dto/create-participant.dto'
@@ -44,7 +45,6 @@ import { DeleteUserResponseDto } from '../interfaces/user/dto/delete-user-respon
 import { LoginUserResponseDto } from '../interfaces/user/dto/login-user-response.dto'
 import { UserIdDto } from '../interfaces/user/dto/user-id.dto'
 import { IServiceUserConfirmResponse } from '../interfaces/user/service-user-confirm-response.interface'
-import { IServiceCertificateListResponse } from '../interfaces/certificate/service-certificate-list-response.interface'
 import { IServiceUserDeleteResponse } from '../interfaces/user/service-user-delete-response.interface'
 import { IServiceUserSearchResponse } from '../interfaces/user/service-user-search-response.interface'
 import { ParticipantIdDto } from './../interfaces/participant/dto/participant-id.dto'
@@ -208,7 +208,7 @@ export class ParticipantsController {
     @Param() params: ParticipantIdDto,
     @Body() participantRequest: UpdateParticipantDto
   ): Promise<UpdateParticipantResponseDto> {
-    const { name, email, dob, phone, institution } = participantRequest
+    const { name, email, dob, phone, institution, cpf } = participantRequest
     const updateParticipantResponse: IServiceParticipantUpdateByIdResponse = await this.userServiceClient
       .send('user_update_by_id', {
         user: {
@@ -217,7 +217,8 @@ export class ParticipantsController {
           personal_data: {
             dob: dob,
             phone: phone,
-            institution: institution
+            institution: institution,
+            cpf: cpf
           }
         },
         id: params.id
