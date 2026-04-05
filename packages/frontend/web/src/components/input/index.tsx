@@ -43,18 +43,23 @@ export const Input: React.FC<Props> = ({
 
   const secure = type === 'password'
   const maskedEmail = type === 'email-masked'
+  const maskedCpf = type === 'cpf-masked'
 
   const [inputState, setInputState] = useState<'isFilled' | 'isFocused' | ''>(
     ''
   )
   const [isShowPass, setIsShowPass] = useState(false)
   const [isShowEmail, setIsShowEmail] = useState(false)
+  const [isCpfShown, setIsCpfShown] = useState(false)
 
   const inputRef = useRef<HTMLInputElement | HTMLTextAreaElement>(null)
   const emailRealRef = useRef('')
   const isShowEmailRef = useRef(false)
+  const cpfRealRef = useRef('')
+  const isCpfShownRef = useRef(false)
 
   useEffect(() => { isShowEmailRef.current = isShowEmail }, [isShowEmail])
+  useEffect(() => { isCpfShownRef.current = isCpfShown }, [isCpfShown])
 
   const maskEmail = useCallback((value: string): string => {
     if (!value) return ''
@@ -64,6 +69,20 @@ export const Input: React.FC<Props> = ({
     if (local.length <= 2) return value
     return local[0] + '*'.repeat(local.length - 2) + local[local.length - 1] + domain
   }, [])
+
+  // CPF format: "123.456.789-10" → "123.***.***-10" (positions 4-6 and 8-10 masked)
+  const maskCpf = useCallback((value: string): string => {
+    if (!value) return ''
+    return value.split('').map((c, i) => ((i >= 4 && i <= 6) || (i >= 8 && i <= 10)) ? '*' : c).join('')
+  }, [])
+
+  // Map formatted CPF cursor position → raw digit index
+  const fmtToRaw = useCallback((p: number) =>
+    p - (p > 3 ? 1 : 0) - (p > 7 ? 1 : 0) - (p > 11 ? 1 : 0), [])
+
+  // Map raw digit index → formatted CPF cursor position
+  const rawToFmt = useCallback((r: number) =>
+    r + (r >= 3 ? 1 : 0) + (r >= 6 ? 1 : 0) + (r >= 9 ? 1 : 0), [])
 
   const { fieldName, defaultValue, registerField, error } = useField(name)
 
@@ -85,6 +104,23 @@ export const Input: React.FC<Props> = ({
           setInputState('')
         }
       })
+    } else if (maskedCpf) {
+      registerField<string>({
+        name: fieldName,
+        ref: inputRef.current,
+        getValue: () => cpfRealRef.current,
+        setValue: (_ref, value) => {
+          cpfRealRef.current = value || ''
+          if (inputRef.current)
+            inputRef.current.value = isCpfShownRef.current ? (value || '') : maskCpf(value || '')
+          setInputState(value ? 'isFilled' : '')
+        },
+        clearValue: () => {
+          cpfRealRef.current = ''
+          if (inputRef.current) inputRef.current.value = ''
+          setInputState('')
+        }
+      })
     } else {
       registerField<string>({
         name: fieldName,
@@ -100,7 +136,7 @@ export const Input: React.FC<Props> = ({
         }
       })
     }
-  }, [fieldName, registerField, maskedEmail, maskEmail])
+  }, [fieldName, registerField, maskedEmail, maskEmail, maskedCpf, maskCpf])
 
   const handleInputFocus = useCallback(() => {
     setInputState('isFocused')
@@ -126,6 +162,80 @@ export const Input: React.FC<Props> = ({
       return next
     })
   }, [maskEmail])
+
+  const handleToggleShowCpf = useCallback(() => {
+    setIsCpfShown(prev => {
+      const next = !prev
+      isCpfShownRef.current = next
+      if (inputRef.current) {
+        const el = inputRef.current as HTMLInputElement
+        el.value = next ? cpfRealRef.current : maskCpf(cpfRealRef.current)
+      }
+      return next
+    })
+  }, [maskCpf])
+
+  const handleCpfKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (['Tab', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End'].includes(e.key)) return
+      if (e.ctrlKey || e.metaKey) return
+      e.preventDefault()
+      const input = e.currentTarget
+      const fmtPos = input.selectionStart ?? 0
+      const fmtPosEnd = input.selectionEnd ?? fmtPos
+      let rawDigits = cpfRealRef.current.replace(/\D/g, '')
+      let rawPos = fmtToRaw(fmtPos)
+      let rawPosEnd = fmtToRaw(fmtPosEnd)
+      let newCursorRaw = rawPos
+      if (e.key === 'Backspace') {
+        if (rawPos !== rawPosEnd) {
+          rawDigits = rawDigits.slice(0, rawPos) + rawDigits.slice(rawPosEnd)
+          newCursorRaw = rawPos
+        } else if (rawPos > 0) {
+          rawDigits = rawDigits.slice(0, rawPos - 1) + rawDigits.slice(rawPos)
+          newCursorRaw = rawPos - 1
+        }
+      } else if (e.key === 'Delete') {
+        if (rawPos !== rawPosEnd) {
+          rawDigits = rawDigits.slice(0, rawPos) + rawDigits.slice(rawPosEnd)
+          newCursorRaw = rawPos
+        } else if (rawPos < rawDigits.length) {
+          rawDigits = rawDigits.slice(0, rawPos) + rawDigits.slice(rawPos + 1)
+          newCursorRaw = rawPos
+        }
+      } else if (/^\d$/.test(e.key)) {
+        if (rawDigits.length >= 11 && rawPos === rawPosEnd) return
+        rawDigits = (rawDigits.slice(0, rawPos) + e.key + rawDigits.slice(rawPosEnd)).slice(0, 11)
+        newCursorRaw = rawPos + 1
+      } else { return }
+      const newFormatted = formatCpf(rawDigits)
+      cpfRealRef.current = newFormatted
+      input.value = isCpfShownRef.current ? newFormatted : maskCpf(newFormatted)
+      setInputState(rawDigits ? 'isFilled' : '')
+      const newFmtCursor = rawToFmt(Math.min(newCursorRaw, newFormatted.replace(/\D/g, '').length))
+      requestAnimationFrame(() => { input.setSelectionRange(newFmtCursor, newFmtCursor) })
+    },
+    [maskCpf, fmtToRaw, rawToFmt]
+  )
+
+  const handleCpfPaste = useCallback(
+    (e: React.ClipboardEvent<HTMLInputElement>) => {
+      e.preventDefault()
+      const digits = e.clipboardData.getData('text').replace(/\D/g, '')
+      const input = e.currentTarget
+      const rawPos = fmtToRaw(input.selectionStart ?? 0)
+      const rawPosEnd = fmtToRaw(input.selectionEnd ?? rawPos)
+      const rawDigits = cpfRealRef.current.replace(/\D/g, '')
+      const newRaw = (rawDigits.slice(0, rawPos) + digits + rawDigits.slice(rawPosEnd)).slice(0, 11)
+      const newFormatted = formatCpf(newRaw)
+      cpfRealRef.current = newFormatted
+      input.value = isCpfShownRef.current ? newFormatted : maskCpf(newFormatted)
+      setInputState(newRaw ? 'isFilled' : '')
+      const newFmtCursor = rawToFmt(Math.min(rawPos + digits.length, newRaw.length))
+      requestAnimationFrame(() => { input.setSelectionRange(newFmtCursor, newFmtCursor) })
+    },
+    [maskCpf, fmtToRaw, rawToFmt]
+  )
 
   const handleEmailKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -194,6 +304,22 @@ export const Input: React.FC<Props> = ({
     }
   }, [inputState])
 
+  const cpfMaskedProps: any = {
+    ...restAux,
+    onFocus: handleInputFocus,
+    onBlur: handleInputBlur,
+    onKeyDown: handleCpfKeyDown,
+    onPaste: handleCpfPaste,
+    ref: inputRef,
+    id: fieldName,
+    'aria-label': fieldName,
+    type: 'text',
+    autoComplete: 'off',
+    inputMode: 'numeric',
+    size: 1,
+    defaultValue: ''
+  }
+
   const emailProps: any = {
     ...restAux,
     onFocus: handleInputFocus,
@@ -240,6 +366,8 @@ export const Input: React.FC<Props> = ({
             <textarea {...(props as TextAreaProps)} />
           ) : maskedEmail ? (
             <input {...emailProps} />
+          ) : maskedCpf ? (
+            <input {...cpfMaskedProps} />
           ) : (
             <input {...(props as InputProps)} />
           )}
@@ -251,6 +379,11 @@ export const Input: React.FC<Props> = ({
           {maskedEmail && (
             <SecureToggle onClick={handleToggleShowEmail}>
               {isShowEmail ? <FiEye size={20} /> : <FiEyeOff size={20} />}
+            </SecureToggle>
+          )}
+          {maskedCpf && (
+            <SecureToggle onClick={handleToggleShowCpf}>
+              {isCpfShown ? <FiEye size={20} /> : <FiEyeOff size={20} />}
             </SecureToggle>
           )}
         </fieldset>

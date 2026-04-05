@@ -147,8 +147,7 @@ const Login: React.FC = () => {
                 name="cpf"
                 label="CPF"
                 placeholder="CPF"
-                type="cpf"
-                inputMode="numeric"
+                type="cpf-masked"
                 icon={FiCreditCard}
                 disabled={loading}
               />
