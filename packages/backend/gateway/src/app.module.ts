@@ -110,6 +110,13 @@ import { StatusAppController } from './controllers/status-app.controller'
       inject: [ConfigService]
     },
     {
+      provide: 'MAILER_SERVICE',
+      useFactory: (configService: ConfigService) => {
+        return ClientProxyFactory.create(configService.get('mailerService'))
+      },
+      inject: [ConfigService]
+    },
+    {
       provide: APP_GUARD,
       useClass: AuthGuard
     },
