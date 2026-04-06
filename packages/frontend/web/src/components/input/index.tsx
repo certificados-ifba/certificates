@@ -75,10 +75,10 @@ export const Input: React.FC<Props> = ({
     return local[0] + '*'.repeat(local.length - 2) + local[local.length - 1] + domain
   }, [])
 
-  // CPF format: "123.456.789-10" → "123.***.***-10" (positions 4-6 and 8-10 masked)
+  // CPF format: "123.456.789-10" → "***.***.***-**" (all digits masked)
   const maskCpf = useCallback((value: string): string => {
     if (!value) return ''
-    return value.split('').map((c, i) => ((i >= 4 && i <= 6) || (i >= 8 && i <= 10)) ? '*' : c).join('')
+    return value.split('').map(c => (c === '.' || c === '-') ? c : '*').join('')
   }, [])
 
   // Map formatted CPF cursor position → raw digit index
@@ -89,10 +89,10 @@ export const Input: React.FC<Props> = ({
   const rawToFmt = useCallback((r: number) =>
     r + (r >= 3 ? 1 : 0) + (r >= 6 ? 1 : 0) + (r >= 9 ? 1 : 0), [])
 
-  // DOB format: "DD/MM/YYYY" → "**/**/YYYY" (positions 0-1 and 3-4 masked)
+  // DOB format: "DD/MM/YYYY" → "**/**/****" (all digits masked)
   const maskDob = useCallback((value: string): string => {
     if (!value) return ''
-    return value.split('').map((c, i) => ((i >= 0 && i <= 1) || (i >= 3 && i <= 4)) ? '*' : c).join('')
+    return value.split('').map(c => c === '/' ? c : '*').join('')
   }, [])
 
   // Map formatted DOB cursor position → raw digit index (separators at 2 and 5)
