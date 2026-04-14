@@ -719,4 +719,52 @@ export class UserController {
 
     return result
   }
+
+  @MessagePattern('user_verify_password')
+  public async userVerifyPassword(params: {
+    id: string
+    password: string
+  }): Promise<{ status: number; message: string; errors: any }> {
+    if (!params?.id || !params?.password) {
+      return {
+        status: HttpStatus.BAD_REQUEST,
+        message: 'user_verify_password_bad_request',
+        errors: null
+      }
+    }
+
+    try {
+      const user = await this.userService.searchUserById(params.id)
+
+      if (!user) {
+        return {
+          status: HttpStatus.NOT_FOUND,
+          message: 'user_verify_password_not_found',
+          errors: null
+        }
+      }
+
+      const isMatch = user.compareEncryptedPassword(params.password)
+
+      if (!isMatch) {
+        return {
+          status: HttpStatus.UNAUTHORIZED,
+          message: 'user_verify_password_invalid',
+          errors: { password: { message: 'Senha incorreta', path: 'password' } }
+        }
+      }
+
+      return {
+        status: HttpStatus.OK,
+        message: 'user_verify_password_success',
+        errors: null
+      }
+    } catch (e) {
+      return {
+        status: HttpStatus.PRECONDITION_FAILED,
+        message: 'user_verify_password_precondition_failed',
+        errors: e.errors
+      }
+    }
+  }
 }
