@@ -1,24 +1,24 @@
 import {
-    Body,
-    Controller,
-    Delete,
-    Get,
-    HttpException,
-    HttpStatus,
-    Inject,
-    Param,
-    Post,
-    Put,
-    Query,
-    Req,
-    Res
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpException,
+  HttpStatus,
+  Inject,
+  Param,
+  Post,
+  Put,
+  Query,
+  Req,
+  Res
 } from '@nestjs/common'
 import { ClientProxy } from '@nestjs/microservices'
 import {
-    ApiBearerAuth,
-    ApiCreatedResponse,
-    ApiOkResponse,
-    ApiTags
+  ApiBearerAuth,
+  ApiCreatedResponse,
+  ApiOkResponse,
+  ApiTags
 } from '@nestjs/swagger'
 import { Response } from 'express'
 
@@ -32,11 +32,11 @@ import { DeleteModelResponseDto } from '../interfaces/model/dto/delete-model-res
 import { ListModelResponseDto } from '../interfaces/model/dto/list-model-response.dto'
 import { ListModelDto } from '../interfaces/model/dto/list-model.dto'
 import { ModelIdDto } from '../interfaces/model/dto/model-id.dto'
+import { UpdateModelResponseDto } from '../interfaces/model/dto/update-model-response.dto'
 import { IServiceModelCreateResponse } from '../interfaces/model/service-model-create-response.interface'
 import { IServiceModelDeleteResponse } from '../interfaces/model/service-model-delete-response.interface'
 import { IServiceModelListResponse } from '../interfaces/model/service-model-list-response.interface'
 import { IServiceModelUpdateResponse } from '../interfaces/model/service-model-update-response.interface'
-import { UpdateModelResponseDto } from '../interfaces/model/dto/update-model-response.dto'
 
 @Controller('events/:event_id/models')
 @ApiBearerAuth('JWT')
