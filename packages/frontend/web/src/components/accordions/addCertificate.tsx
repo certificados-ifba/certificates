@@ -13,6 +13,7 @@ import {
 } from 'react-icons/fi'
 import * as Yup from 'yup'
 
+import { IRole } from '../../dtos/ICertificate'
 import { useToast } from '../../providers/toast'
 import api from '../../services/axios'
 import { Footer, Section } from '../../styles/components/accordion'
@@ -23,26 +24,71 @@ import { Accordion } from '../accordion'
 import { Button } from '../button'
 import { Input } from '../input'
 import CertificateLayout from './certificateLayout'
+import Roles from './roles'
+
+export interface IModelData {
+  id: string
+  name: string
+  is_default: boolean
+  pages: Array<{
+    type: string
+    image: string
+    text: string
+    layout: any
+  }>
+  criterions: Array<{
+    function: any
+    type_activity: any
+  }>
+}
 
 interface Props {
   eventId: string
   edit?: boolean
+  modelData?: IModelData
   onSuccess?: () => void
 }
 
 const AddCertificate: React.FC<Props> = ({
   eventId,
   edit,
+  modelData,
   onSuccess
 }) => {
   const formRef = useRef<FormHandles>(null)
   const layoutFrontFormRef = useRef<FormHandles>(null)
   const layoutVerseFormRef = useRef<FormHandles>(null)
+  const [rolesFormRef, setRolesFormRef] = useState(null)
+
+  // Extrair roles iniciais do modelData
+  const initialRoles: IRole[] = (modelData?.criterions || []).map((c, index) => ({
+    number: index + 1,
+    activity: {
+      name: typeof c.type_activity === 'object' ? (c.type_activity?.name || '') : '',
+      id: typeof c.type_activity === 'object' ? (c.type_activity?.id || c.type_activity?.value || '') : String(c.type_activity)
+    },
+    function: {
+      name: typeof c.function === 'object' ? (c.function?.name || '') : '',
+      id: typeof c.function === 'object' ? (c.function?.id || c.function?.value || '') : String(c.function)
+    }
+  }))
+
+  const [collectedRoles, setCollectedRoles] = useState<any[]>(initialRoles)
   const [loading, setLoading] = useState(false)
   const [isOpen, setIsOpen] = useState(!!edit)
-  const [isVerse, setIsVerse] = useState(false)
-  const [previewFront, setPreviewFront] = useState('')
-  const [previewVerse, setPreviewVerse] = useState('')
+  const hasVerse = modelData?.pages?.some(p => p.type === 'verso') || false
+  const [isVerse, setIsVerse] = useState(hasVerse)
+  const [isDefault, setIsDefault] = useState(modelData?.is_default || false)
+
+  const frontPage = modelData?.pages?.find(p => p.type === 'frente')
+  const versePage = modelData?.pages?.find(p => p.type === 'verso')
+
+  const [previewFront, setPreviewFront] = useState(
+    frontPage?.image || ''
+  )
+  const [previewVerse, setPreviewVerse] = useState(
+    versePage?.image || ''
+  )
   const { addToast } = useToast()
 
   const handleClose = useCallback(() => {
@@ -51,6 +97,7 @@ const AddCertificate: React.FC<Props> = ({
     setPreviewFront('')
     setPreviewVerse('')
     setIsVerse(false)
+    setIsDefault(false)
     if (onSuccess) {
       onSuccess()
     }
@@ -130,20 +177,36 @@ const AddCertificate: React.FC<Props> = ({
           })
         }
 
+        // Coletar critérios
+        const criterions = collectedRoles.map(role => ({
+            function: role.function?.value || role.function?.id || role.function,
+            type_activity: role.activity?.value || role.activity?.id || role.activity
+          }))
+
         const payload = {
           name: data.name,
           pages,
-          criterions: [] // Por enquanto vazio, pode ser implementado depois
+          criterions,
+          is_default: isDefault
         }
 
         console.log('🚀 [DEBUG] Payload to send:', JSON.stringify(payload, null, 2))
 
-        await api.post(`events/${eventId}/models`, payload)
-        addToast({
-          type: 'success',
-          title: 'Modelo adicionado',
-          description: 'O modelo de certificado foi adicionado com sucesso.'
-        })
+        if (edit && modelData?.id) {
+          await api.put(`events/${eventId}/models/${modelData.id}`, payload)
+          addToast({
+            type: 'success',
+            title: 'Modelo atualizado',
+            description: 'O modelo de certificado foi atualizado com sucesso.'
+          })
+        } else {
+          await api.post(`events/${eventId}/models`, payload)
+          addToast({
+            type: 'success',
+            title: 'Modelo adicionado',
+            description: 'O modelo de certificado foi adicionado com sucesso.'
+          })
+        }
         setLoading(false)
         handleClose()
       } catch (err) {
@@ -161,7 +224,7 @@ const AddCertificate: React.FC<Props> = ({
         })
       }
     },
-    [addToast, eventId, handleClose, isVerse, previewFront, previewVerse]
+    [addToast, eventId, handleClose, isVerse, isDefault, previewFront, previewVerse, collectedRoles, edit, modelData]
   )
 
   return (
@@ -175,7 +238,7 @@ const AddCertificate: React.FC<Props> = ({
           : 'Adicionar Modelo de Certificado'
       }
     >
-      <Form ref={formRef} onSubmit={handleSubmit}>
+      <Form ref={formRef} onSubmit={handleSubmit} initialData={{ name: modelData?.name || '' }}>
         <Section paddingTop="sm" paddingBottom="md">
           <Row cols={2}>
             <div>
@@ -187,6 +250,18 @@ const AddCertificate: React.FC<Props> = ({
                 icon={FiFileText}
               />
             </div>
+            <div style={{ display: 'flex', alignItems: 'flex-end', paddingBottom: '0.25rem' }}>
+              <Button
+                size="small"
+                onClick={() => setIsDefault(state => !state)}
+                outline={!isDefault}
+                inline
+                type="button"
+              >
+                {isDefault ? <FiCheckSquare size={20} /> : <FiSquare size={20} />}
+                <span>Modelo Padrão</span>
+              </Button>
+            </div>
           </Row>
         </Section>
         <Divider />
@@ -195,6 +270,7 @@ const AddCertificate: React.FC<Props> = ({
             <CertificateLayout
               type="frente"
               text={
+                frontPage?.text ||
                 '<p>Certificamos que <strong>[participante_nome]</strong> participou da <strong>[evento_edicao] [evento_nome] ([evento_sigla])</strong> do Instituto Federal de Educação, Ciência e Tecnologia da Bahia (IFBA) Campus Vitória da Conquista, realizada no período de <strong>[participacao_periodo]</strong>, com carga horária de <strong>[participacao_carga_horaria]</strong></p>'
               }
               formRef={layoutFrontFormRef}
@@ -222,7 +298,7 @@ const AddCertificate: React.FC<Props> = ({
             {isVerse && (
               <CertificateLayout
                 type="verso"
-                text={''}
+                text={versePage?.text || ''}
                 formRef={layoutVerseFormRef}
                 preview={previewVerse}
                 setPreview={setPreviewVerse}
@@ -231,7 +307,20 @@ const AddCertificate: React.FC<Props> = ({
           </Accordion>
         </Section>
         <Section paddingBottom="md">
-          {/* Roles commented out for now */}
+          <Roles
+            id={edit ? 'edit' : 'add'}
+            roles={initialRoles.length > 0 ? initialRoles : undefined}
+            isDefault={isDefault}
+            onDefaultChange={(value) => {
+              setIsDefault(value)
+            }}
+            onFormChange={form => {
+              setRolesFormRef(form)
+            }}
+            onRolesChange={roles => {
+              setCollectedRoles(roles)
+            }}
+          />
         </Section>
         <Footer>
           <div>

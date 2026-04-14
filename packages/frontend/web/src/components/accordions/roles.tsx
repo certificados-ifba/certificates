@@ -17,6 +17,7 @@ import {
 } from 'react-icons/fi'
 
 import { IRole } from '../../dtos/ICertificate'
+import api from '../../services/axios'
 import { Section } from '../../styles/components/accordion'
 import { Accordion } from '../accordion'
 import { Alert } from '../alert'
@@ -27,22 +28,58 @@ import { Table } from '../table'
 
 interface Props {
   onFormChange: (formRef: MutableRefObject<FormHandles>) => void
+  onRolesChange?: (roles: IRole[]) => void
+  isDefault?: boolean
+  onDefaultChange?: (value: boolean) => void
   preview?: boolean
   roles?: IRole[]
   id: string
 }
 
-const Roles: React.FC<Props> = ({ onFormChange, preview, roles, id }) => {
+const Roles: React.FC<Props> = ({ onFormChange, onRolesChange, isDefault, onDefaultChange, preview, roles, id }) => {
   const formRef = useRef<FormHandles>(null)
 
-  const [defaultModel, setDefaultModel] = useState(
-    !roles ? false : roles.length === 0
-  )
   const [roleList, setRoleList] = useState(roles || [])
+  const [activityOptions, setActivityOptions] = useState<any[]>([])
+  const [functionOptions, setFunctionOptions] = useState<any[]>([])
 
   useEffect(() => {
     onFormChange(formRef)
   }, [formRef, onFormChange])
+
+  useEffect(() => {
+    if (onRolesChange) {
+      onRolesChange(roleList)
+    }
+  }, [roleList, onRolesChange])
+
+  useEffect(() => {
+    const loadOptions = async () => {
+      try {
+        const [actRes, funcRes] = await Promise.all([
+          api.get('/activity_types', { params: { sort_by: 'name', order_by: 'ASC' } }),
+          api.get('/functions', { params: { sort_by: 'name', order_by: 'ASC' } })
+        ])
+        const activities = (actRes.data?.data?.generics || actRes.data?.data || [])
+        const functions = (funcRes.data?.data?.generics || funcRes.data?.data || [])
+        setActivityOptions(
+          activities.map((item: any) => ({
+            value: { name: item.name, value: item.id },
+            label: item.name.charAt(0).toUpperCase() + item.name.slice(1)
+          }))
+        )
+        setFunctionOptions(
+          functions.map((item: any) => ({
+            value: { name: item.name, value: item.id },
+            label: item.name.charAt(0).toUpperCase() + item.name.slice(1)
+          }))
+        )
+      } catch (err) {
+        console.error('Erro ao carregar opções de critérios:', err)
+      }
+    }
+    loadOptions()
+  }, [])
 
   const funcID = 'addFunction' + (preview ? 'modal' : '') + id
   const atvID = 'addActivity' + (preview ? 'modal' : '') + id
@@ -89,22 +126,22 @@ const Roles: React.FC<Props> = ({ onFormChange, preview, roles, id }) => {
             <Button
               size="small"
               onClick={() => {
-                setDefaultModel(!defaultModel)
+                if (onDefaultChange) onDefaultChange(!isDefault)
               }}
-              outline={defaultModel}
+              outline={!isDefault}
               inline
               type="button"
             >
-              {!defaultModel ? (
+              {isDefault ? (
                 <FiCheckSquare size={20} />
               ) : (
                 <FiSquare size={20} />
               )}
-              <span>Possui algum critério?</span>
+              <span>Modelo padrão</span>
             </Button>
           </Section>
         )}
-        {!defaultModel && (
+        {!isDefault && (
           <>
             <Section paddingTop={preview ? 'md' : undefined} paddingBottom="md">
               <Table>
@@ -126,16 +163,7 @@ const Roles: React.FC<Props> = ({ onFormChange, preview, roles, id }) => {
                             formRef={formRef}
                             name={atvID}
                             isSearchable={false}
-                            options={[
-                              {
-                                value: { name: 'Mesa Redonda', value: '1' },
-                                label: 'Mesa Redonda'
-                              },
-                              {
-                                value: { name: 'Palestra', value: '2 ' },
-                                label: 'Palestra'
-                              }
-                            ]}
+                            options={activityOptions}
                           />
                         </td>
                         <td>
@@ -143,16 +171,7 @@ const Roles: React.FC<Props> = ({ onFormChange, preview, roles, id }) => {
                             formRef={formRef}
                             name={funcID}
                             isSearchable={false}
-                            options={[
-                              {
-                                value: { name: 'Palestrante', value: '1' },
-                                label: 'Palestrante'
-                              },
-                              {
-                                value: { name: 'Professor', value: '1' },
-                                label: 'Professor'
-                              }
-                            ]}
+                            options={functionOptions}
                           />
                         </td>
                         <td>
@@ -223,7 +242,7 @@ const Roles: React.FC<Props> = ({ onFormChange, preview, roles, id }) => {
             )}
           </>
         )}
-        {defaultModel && (
+        {isDefault && (
           <Section paddingTop={preview ? 'md' : undefined} paddingBottom="md">
             <Alert type="warning" icon={FiAlertCircle}>
               Atenção! Este certificado será utilizado para atividades
@@ -246,32 +265,14 @@ const Roles: React.FC<Props> = ({ onFormChange, preview, roles, id }) => {
                 formRef={formRef}
                 name={atvID}
                 isSearchable={false}
-                options={[
-                  {
-                    value: { name: 'Mesa Redonda', value: '1' },
-                    label: 'Mesa Redonda'
-                  },
-                  {
-                    value: { name: 'Palestra', value: '2 ' },
-                    label: 'Palestra'
-                  }
-                ]}
+                options={activityOptions}
               />
               <Select
                 label="Função"
                 formRef={formRef}
                 name={funcID}
                 isSearchable={false}
-                options={[
-                  {
-                    value: { name: 'Palestrante', value: '1' },
-                    label: 'Palestrante'
-                  },
-                  {
-                    value: { name: 'Professor', value: '1' },
-                    label: 'Professor'
-                  }
-                ]}
+                options={functionOptions}
               />
             </>
           )}

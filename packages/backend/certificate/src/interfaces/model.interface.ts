@@ -26,6 +26,7 @@ export interface IModel extends Document {
   name: string
   pages: IPage[]
   criterions: ICriterion[]
+  is_default: boolean
   created_at: number
   updated_at: number
 }

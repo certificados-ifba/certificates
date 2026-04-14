@@ -1,12 +1,12 @@
-import AddCertificate from '@components/accordions/addCertificate'
+import AddCertificate, { IModelData } from '@components/accordions/addCertificate'
 import CertificatePreview from '@components/accordions/certificatePreview'
 import { Button } from '@components/button'
 import { Grid } from '@components/grid'
 import { ICertificate, IEvent } from '@dtos'
 import { useToast } from '@providers'
 import { api } from '@services'
-import { useCallback, useEffect, useState } from 'react'
-import { FiCopy, FiPlus } from 'react-icons/fi'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { FiPlus } from 'react-icons/fi'
 
 import { Container } from './styles'
 
@@ -17,54 +17,37 @@ interface Props {
 interface IApiModel {
   id: string
   name: string
+  is_default: boolean
   pages: Array<{
     type: string
     image: string
     text: string
     layout: any
   }>
+  criterions: Array<{
+    function: any
+    type_activity: any
+  }>
   created_at: string
 }
 
 const STORAGE_URL = process.env.baseURL || 'http://localhost:4001'
 
-const LAYOUT_PADRAO = {
-  padding: { top: '15', right: 15, bottom: 15, left: '15' },
-  vertical: { name: 'bottom', value: 0 },
-  horizontal: { name: 'right', value: 0 }
-}
-
-const MODELOS_PADRAO: ICertificate[] = [
-  {
-    id: 'template-1',
-    name: 'Modelo Padrão',
-    front: {
-      img: '/teste1.png',
-      text: '<p>Certificamos que <strong>[participante_nome]</strong> participou da <strong>[evento_edicao] [evento_nome] ([evento_sigla])</strong> do Instituto Federal de Educação, Ciência e Tecnologia da Bahia (IFBA) Campus Vitória da Conquista, realizada no período de <strong>[participacao_periodo]</strong>, com carga horária de <strong>[participacao_carga_horaria]</strong></p>'
-    },
-    roles: []
-  },
-  {
-    id: 'template-2',
-    name: 'Modelo para Professores',
-    front: {
-      img: '/teste.jpeg',
-      text: '<p>Certificamos que <strong>[participante_nome]</strong> participou da <strong>[evento_edicao] [evento_nome] ([evento_sigla])</strong> do Instituto Federal de Educação, Ciência e Tecnologia da Bahia (IFBA) Campus Vitória da Conquista, realizada no período de <strong>[participacao_periodo]</strong>, com carga horária de <strong>[participacao_carga_horaria]</strong></p>'
-    },
-    verse: {
-      img: '/teste.jpeg',
-      text: '<p>Certificamos que <strong>[participante_nome]</strong> participou da <strong>[evento_edicao] [evento_nome] ([evento_sigla])</strong> do Instituto Federal de Educação, Ciência e Tecnologia da Bahia (IFBA) Campus Vitória da Conquista, realizada no período de <strong>[participacao_periodo]</strong>, com carga horária de <strong>[participacao_carga_horaria]</strong></p>'
-    },
-    roles: [
-      { number: 1, activity: { name: 'Mesa Redonda', id: '1' }, function: { name: 'Palestrante', id: '1' } },
-      { number: 2, activity: { name: 'Mesa Redonda', id: '1' }, function: { name: 'Professor', id: '1' } }
-    ]
-  }
-]
-
 function apiModelToCertificate(model: IApiModel): ICertificate {
   const frontPage = model.pages.find(p => p.type === 'frente')
   const versePage = model.pages.find(p => p.type === 'verso')
+
+  const roles = (model.criterions || []).map((c, index) => ({
+    number: index + 1,
+    activity: {
+      name: typeof c.type_activity === 'object' ? (c.type_activity?.name || '') : String(c.type_activity),
+      id: typeof c.type_activity === 'object' ? (c.type_activity?.value || c.type_activity?.id || '') : String(c.type_activity)
+    },
+    function: {
+      name: typeof c.function === 'object' ? (c.function?.name || '') : String(c.function),
+      id: typeof c.function === 'object' ? (c.function?.value || c.function?.id || '') : String(c.function)
+    }
+  }))
 
   return {
     id: model.id,
@@ -75,15 +58,15 @@ function apiModelToCertificate(model: IApiModel): ICertificate {
     verse: versePage
       ? { img: versePage.image ? `${STORAGE_URL}/upload/${versePage.image}` : '', text: versePage.text }
       : undefined,
-    roles: []
+    roles: roles.length > 0 ? roles : []
   }
 }
 
 export const EventCertificate: React.FC<Props> = ({ event }) => {
   const [models, setModels] = useState<IApiModel[]>([])
   const [loadingModels, setLoadingModels] = useState(true)
-  const [loadingTemplate, setLoadingTemplate] = useState<string | null>(null)
   const [showAddCertificateForm, setShowAddCertificateForm] = useState(false)
+  const [editingModel, setEditingModel] = useState<IApiModel | null>(null)
   const { addToast } = useToast()
 
   const loadModels = useCallback(async () => {
@@ -114,45 +97,37 @@ export const EventCertificate: React.FC<Props> = ({ event }) => {
     }
   }, [event?.id, addToast, loadModels])
 
-  const handleUseTemplate = useCallback(async (certificate: ICertificate) => {
-    try {
-      setLoadingTemplate(certificate.id)
-      const pages: any[] = [
-        { type: 'frente', text: certificate.front?.text || '', image: '', layout: LAYOUT_PADRAO }
-      ]
-      if (certificate.verse?.text) {
-        pages.push({ type: 'verso', text: certificate.verse.text, image: '', layout: LAYOUT_PADRAO })
-      }
-      await api.post(`events/${event?.id}/models`, { name: certificate.name, pages, criterions: [] })
-      addToast({
-        type: 'success',
-        title: 'Modelo adicionado',
-        description: `"${certificate.name}" adicionado ao evento. Edite para inserir as imagens.`
-      })
-      loadModels()
-    } catch (err) {
-      addToast({ type: 'error', title: 'Erro ao usar o modelo', description: err })
-    } finally {
-      setLoadingTemplate(null)
-    }
-  }, [event?.id, addToast, loadModels])
-
   const isEditable = event?.status !== 'PUBLISHED'
 
   const handleAddCertificateSuccess = useCallback(() => {
     setShowAddCertificateForm(false)
+    setEditingModel(null)
     loadModels()
   }, [loadModels])
 
+  const handleEdit = useCallback((model: IApiModel) => {
+    setEditingModel(model)
+    setShowAddCertificateForm(true)
+  }, [])
+
+  const defaultModels = useMemo(() => models.filter(m => m.is_default), [models])
+  const regularModels = useMemo(() => models.filter(m => !m.is_default), [models])
+
   return (
     <Container>
-      {/* Formulário de adição de novo modelo */}
+      {/* Formulário de adição/edição de modelo */}
       {isEditable && showAddCertificateForm && (
         <div style={{ marginBottom: '2rem' }}>
           <h3 style={{ fontSize: '1rem', fontWeight: 600, color: '#555', marginBottom: '1rem' }}>
-            Adicionar novo modelo
+            {editingModel ? 'Editar modelo' : 'Adicionar novo modelo'}
           </h3>
-          <AddCertificate eventId={event?.id} onSuccess={handleAddCertificateSuccess} />
+          <AddCertificate
+            key={editingModel?.id || 'new'}
+            eventId={event?.id}
+            edit={!!editingModel}
+            modelData={editingModel as IModelData}
+            onSuccess={handleAddCertificateSuccess}
+          />
         </div>
       )}
 
@@ -168,7 +143,6 @@ export const EventCertificate: React.FC<Props> = ({ event }) => {
                   Modelos do Evento
                 </h3>
                 {isEditable && (
-
                   <div
                     style={{
                       display: 'flex',
@@ -178,7 +152,10 @@ export const EventCertificate: React.FC<Props> = ({ event }) => {
                   >
                     <Button
                       color="primary"
-                      onClick={() => setShowAddCertificateForm(true)}
+                      onClick={() => {
+                        setEditingModel(null)
+                        setShowAddCertificateForm(true)
+                      }}
                       type="button"
                       size="small"
                       style={{ width: 'auto' }}
@@ -187,79 +164,78 @@ export const EventCertificate: React.FC<Props> = ({ event }) => {
                       <span>Adicionar novo modelo</span>
                     </Button>
                   </div>
-
                 )}
               </div>
-              <Grid firstWidth="1460px" cols={2}>
-                {models.map(model => (
-                  <div key={model.id}>
-                    <CertificatePreview
-                      certificate={apiModelToCertificate(model)}
-                      handleEdit={() => {/* TODO: edição */ }}
-                      handleDelete={() => handleDelete(model.id)}
-                    />
-                  </div>
-                ))}
-              </Grid>
+
+              {/* Modelos padrão */}
+              {defaultModels.length > 0 && (
+                <div style={{ marginBottom: '1.5rem' }}>
+                  <h4 style={{ fontSize: '0.875rem', fontWeight: 600, color: '#718096', marginBottom: '0.5rem' }}>
+                    Modelos Padrão
+                  </h4>
+                  <Grid firstWidth="1460px" cols={2}>
+                    {defaultModels.map(model => (
+                      <div key={model.id}>
+                        <CertificatePreview
+                          certificate={apiModelToCertificate(model)}
+                          handleEdit={() => handleEdit(model)}
+                          handleDelete={() => handleDelete(model.id)}
+                        />
+                      </div>
+                    ))}
+                  </Grid>
+                </div>
+              )}
+
+              {/* Modelos regulares */}
+              {regularModels.length > 0 && (
+                <div>
+                  {defaultModels.length > 0 && (
+                    <h4 style={{ fontSize: '0.875rem', fontWeight: 600, color: '#718096', marginBottom: '0.5rem' }}>
+                      Outros Modelos
+                    </h4>
+                  )}
+                  <Grid firstWidth="1460px" cols={2}>
+                    {regularModels.map(model => (
+                      <div key={model.id}>
+                        <CertificatePreview
+                          certificate={apiModelToCertificate(model)}
+                          handleEdit={() => handleEdit(model)}
+                          handleDelete={() => handleDelete(model.id)}
+                        />
+                      </div>
+                    ))}
+                  </Grid>
+                </div>
+              )}
             </div>
           ) : isEditable ? (
-            /* Templates padrão — só aparecem quando não há modelos e o evento ainda não foi publicado */
             <div style={{ marginTop: '1.5rem' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
                 <div />
-
-                  <div
-                    style={{
-                      display: 'flex',
-                      justifyContent: 'flex-end',
-                      marginBottom: '1rem'
-                    }}
+                <div
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'flex-end',
+                    marginBottom: '1rem'
+                  }}
+                >
+                  <Button
+                    color="primary"
+                    onClick={() => setShowAddCertificateForm(true)}
+                    type="button"
+                    size="small"
+                    style={{ width: 'auto' }}
                   >
-                    <Button
-                      color="primary"
-                      onClick={() => setShowAddCertificateForm(true)}
-                      type="button"
-                      size="small"
-                      style={{ width: 'auto' }}
-                    >
-                      <FiPlus size={14} />
-                      <span>Adicionar novo modelo</span>
-                    </Button>
-                  </div>
-
+                    <FiPlus size={14} />
+                    <span>Adicionar novo modelo</span>
+                  </Button>
+                </div>
               </div>
-
-              <h3 style={{ fontSize: '1rem', fontWeight: 600, color: '#555', marginBottom: '0.5rem' }}>
-                Modelos Padrão
-              </h3>
-              <small style={{ color: '#888' }}>
-                Use um dos modelos padrão como ponto de partida ou crie um novo.
-              </small>
-              <Grid firstWidth="1460px" cols={2} marginBottom="md">
-                {MODELOS_PADRAO.map(certificate => (
-                  <div key={certificate.id}>
-                    <CertificatePreview
-                      certificate={certificate}
-                      handleEdit={() => {}}
-                      handleDelete={() => {}}
-                    />
-                    <div style={{ marginTop: '0.5rem' }}>
-                      <Button
-                        color="primary"
-                        size="small"
-                        inline
-                        loading={loadingTemplate === certificate.id}
-                        disabled={!!loadingTemplate}
-                        onClick={() => handleUseTemplate(certificate)}
-                        type="button"
-                      >
-                        <FiCopy size={16} />
-                        <span>Usar este modelo</span>
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </Grid>
+              <div style={{ padding: '1.5rem', textAlign: 'center', color: '#718096', border: '1px dashed #e2e8f0', borderRadius: '0.375rem' }}>
+                <p style={{ margin: 0 }}>Nenhum modelo cadastrado ainda.</p>
+                <small>Clique em &quot;Adicionar novo modelo&quot; para criar o primeiro modelo de certificado.</small>
+              </div>
             </div>
           ) : (
             <div style={{ padding: '1rem', marginTop: '1rem', color: '#718096', border: '1px solid #e2e8f0', borderRadius: '0.375rem' }}>

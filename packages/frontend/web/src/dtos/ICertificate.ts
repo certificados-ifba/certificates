@@ -66,6 +66,7 @@ export interface IModelCertificate {
   name: string
   pages: IPage[]
   criterions: ICriterion[]
+  is_default?: boolean
 }
 
 // export interface ILayout {

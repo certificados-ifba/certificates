@@ -1,23 +1,24 @@
 import {
-  Body,
-  Controller,
-  Delete,
-  Get,
-  HttpException,
-  HttpStatus,
-  Inject,
-  Param,
-  Post,
-  Query,
-  Req,
-  Res
+    Body,
+    Controller,
+    Delete,
+    Get,
+    HttpException,
+    HttpStatus,
+    Inject,
+    Param,
+    Post,
+    Put,
+    Query,
+    Req,
+    Res
 } from '@nestjs/common'
 import { ClientProxy } from '@nestjs/microservices'
 import {
-  ApiBearerAuth,
-  ApiCreatedResponse,
-  ApiOkResponse,
-  ApiTags
+    ApiBearerAuth,
+    ApiCreatedResponse,
+    ApiOkResponse,
+    ApiTags
 } from '@nestjs/swagger'
 import { Response } from 'express'
 
@@ -34,6 +35,8 @@ import { ModelIdDto } from '../interfaces/model/dto/model-id.dto'
 import { IServiceModelCreateResponse } from '../interfaces/model/service-model-create-response.interface'
 import { IServiceModelDeleteResponse } from '../interfaces/model/service-model-delete-response.interface'
 import { IServiceModelListResponse } from '../interfaces/model/service-model-list-response.interface'
+import { IServiceModelUpdateResponse } from '../interfaces/model/service-model-update-response.interface'
+import { UpdateModelResponseDto } from '../interfaces/model/dto/update-model-response.dto'
 
 @Controller('events/:event_id/models')
 @ApiBearerAuth('JWT')
@@ -109,7 +112,7 @@ export class ModelsController {
     @Param() params: ModelIdDto,
     @Body() certificateRequest: CreateModelDto
   ): Promise<CreateModelResponseDto> {
-    const { name, pages, criterions } = certificateRequest
+    const { name, pages, criterions, is_default } = certificateRequest
 
     const eventResponse: IServiceEventGetByIdResponse = await this.eventServiceClient
       .send('event_get_by_id', {
@@ -134,7 +137,8 @@ export class ModelsController {
         event: eventResponse.data.event.id,
         name,
         pages,
-        criterions
+        criterions,
+        is_default
       })
       .toPromise()
 
@@ -153,6 +157,51 @@ export class ModelsController {
       message: createModelResponse.message,
       data: {
         model: createModelResponse.model
+      },
+      errors: null
+    }
+  }
+
+  @Put(':id')
+  @Authorization(true)
+  @Permission('model_create')
+  @ApiOkResponse({
+    type: UpdateModelResponseDto
+  })
+  public async updateModel(
+    @Req() request: IAuthorizedRequest,
+    @Param() params: ModelIdDto,
+    @Body() certificateRequest: CreateModelDto
+  ): Promise<UpdateModelResponseDto> {
+    const { name, pages, criterions, is_default } = certificateRequest
+
+    const updateModelResponse: IServiceModelUpdateResponse = await this.certificateServiceClient
+      .send('model_update', {
+        id: params.id,
+        model: {
+          name,
+          pages,
+          criterions,
+          is_default
+        }
+      })
+      .toPromise()
+
+    if (updateModelResponse.status !== HttpStatus.OK) {
+      throw new HttpException(
+        {
+          message: updateModelResponse.message,
+          data: null,
+          errors: updateModelResponse.errors
+        },
+        updateModelResponse.status
+      )
+    }
+
+    return {
+      message: updateModelResponse.message,
+      data: {
+        model: updateModelResponse.model
       },
       errors: null
     }

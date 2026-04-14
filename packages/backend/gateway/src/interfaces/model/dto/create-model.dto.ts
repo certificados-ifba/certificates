@@ -11,4 +11,7 @@ export class CreateModelDto {
 
   @ApiProperty()
   criterions: ICriterion
+
+  @ApiProperty({ example: false })
+  is_default: boolean
 }

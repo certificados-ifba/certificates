@@ -46,6 +46,7 @@ export const AddCertificate: React.FC<Props> = ({
   const [loading, setLoading] = useState(false)
   const [isOpen, setIsOpen] = useState(!!edit)
   const [isVerse, setIsVerse] = useState(false)
+  const [isDefault, setIsDefault] = useState(false)
   const { addToast } = useToast()
 
   const handleClose = useCallback(() => {
@@ -71,7 +72,7 @@ export const AddCertificate: React.FC<Props> = ({
         await schema.validate(data, {
           abortEarly: false
         })
-        await api.post(`events/${eventId}/models`, data)
+        await api.post(`events/${eventId}/models`, { ...data, is_default: isDefault })
         addToast({
           type: 'success',
           title: 'Modelo adicionado',
@@ -94,7 +95,7 @@ export const AddCertificate: React.FC<Props> = ({
         })
       }
     },
-    [addToast, eventId, handleClose]
+    [addToast, eventId, handleClose, isDefault]
   )
 
   // useEffect(() => {
@@ -136,6 +137,18 @@ export const AddCertificate: React.FC<Props> = ({
               placeholder="Ex.: Modelo Padrão"
               icon={FiFileText}
             />
+            <div style={{ display: 'flex', alignItems: 'flex-end', paddingBottom: '0.25rem' }}>
+              <Button
+                size="small"
+                onClick={() => setIsDefault(state => !state)}
+                outline={!isDefault}
+                inline
+                type="button"
+              >
+                {isDefault ? <FiCheckSquare size={20} /> : <FiSquare size={20} />}
+                <span>Modelo Padrão</span>
+              </Button>
+            </div>
           </Grid>
         </Section>
         <Divider />

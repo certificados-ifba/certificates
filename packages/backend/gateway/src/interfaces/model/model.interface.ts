@@ -28,4 +28,5 @@ export interface IModel {
   name: string
   pages: IPage[]
   criterions: ICriterion[]
+  is_default: boolean
 }
