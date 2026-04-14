@@ -19,7 +19,6 @@ import {
   FiCalendar,
   FiCheck,
   FiCreditCard,
-  FiLogIn,
   FiSearch
 } from 'react-icons/fi'
 import * as Yup from 'yup'
@@ -117,16 +116,7 @@ const Login: React.FC = () => {
             <FiCheck size={20} />
             <span>Validar Certificado</span>
           </Button>
-          <Button
-            onClick={() => {
-              router.push(`/login`)
-            }}
-            size="small"
-            type="button"
-            inline
-          >
-            <FiLogIn size={20} /> <span>Acesso administrativo</span>
-          </Button>
+
         </div>
       </TopButton>
       <Container maxWidth={500} login={true}>
