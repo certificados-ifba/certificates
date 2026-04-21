@@ -68,10 +68,4 @@ export const GlobalStyle = createGlobalStyle`
   .public-DraftStyleDefault-block {
     padding: 0 16px;
   }
-
-  /* Oculta o aviso de modo de teste injetado pelo hCaptcha */
-  div#warning,
-  div.warning-text {
-    display: none !important;
-  }
 `
