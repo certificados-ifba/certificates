@@ -12,8 +12,8 @@ export const getErrorMessage = (
       message = errors.email
         ? 'E-mail já cadastrado, tente com um diferente.'
         : errors.cpf
-        ? 'CPF já cadastrado, tente com um diferente.'
-        : 'Conflito encontrado, verifique os dados informados.'
+          ? 'CPF já cadastrado, tente com um diferente.'
+          : 'Conflito encontrado, verifique os dados informados.'
       break
     case 'user_get_by_link_expired':
       message = 'Link expirado, favor tente novamente.'
@@ -36,6 +36,10 @@ export const getErrorMessage = (
       break
     case 'activity_create_conflict':
       message = 'Atividade já cadastrada, tente com o nome ou tipo diferente.'
+      break
+    case 'participant_delete_conflict':
+      message =
+        'O participante não pode ser removido porque está vinculado a um evento.'
       break
     default:
       message = 'Erro desconhecido, favor entrar em contato com o adminstrador.'

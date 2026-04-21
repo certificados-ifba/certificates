@@ -16,7 +16,7 @@ import { EventService } from './services/event.service'
 
 @Controller()
 export class EventController {
-  constructor(private readonly eventService: EventService) {}
+  constructor(private readonly eventService: EventService) { }
 
   @MessagePattern('event_list')
   public async eventList(
@@ -246,5 +246,51 @@ export class EventController {
       message: 'get_event_published_success',
       data: quantity
     }
+  }
+
+  @MessagePattern('event_publish_by_id')
+  public async publishEventById(params: {
+    id: string
+    user: IUser
+  }): Promise<IEventUpdateByIdResponse> {
+    let result: IEventUpdateByIdResponse
+
+    if (params?.id && params?.user) {
+      const event = await this.eventService.findEventById(params.id)
+      if (event) {
+        if (event.user === params.user.id || params.user.role === 'ADMIN') {
+          const updatedEvent = await this.eventService.publishEventById(params.id)
+          result = {
+            status: HttpStatus.OK,
+            message: 'event_publish_by_id_success',
+            event: updatedEvent,
+            errors: null
+          }
+        } else {
+          result = {
+            status: HttpStatus.FORBIDDEN,
+            message: 'event_publish_by_id_forbidden',
+            event: null,
+            errors: null
+          }
+        }
+      } else {
+        result = {
+          status: HttpStatus.NOT_FOUND,
+          message: 'event_publish_by_id_not_found',
+          event: null,
+          errors: null
+        }
+      }
+    } else {
+      result = {
+        status: HttpStatus.BAD_REQUEST,
+        message: 'event_publish_by_id_bad_request',
+        event: null,
+        errors: null
+      }
+    }
+
+    return result
   }
 }

@@ -14,4 +14,7 @@ export class UpdateUserDto {
 
   @ApiProperty({ example: 'teste@gmail.com', required: false })
   email?: string
+
+  @ApiProperty({ example: 'senhaSegura123', required: false })
+  password?: string
 }

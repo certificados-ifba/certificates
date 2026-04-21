@@ -26,6 +26,7 @@ import * as parser from 'ua-parser-js'
 
 import { Authorization } from '../decorators/authorization.decorator'
 import { Permission } from '../decorators/permission.decorator'
+import { IServiceCertificateListResponse } from '../interfaces/certificate/service-certificate-list-response.interface'
 import { IAuthorizedRequest } from '../interfaces/common/authorized-request.interface'
 import { CreateParticipantResponseDto } from '../interfaces/participant/dto/create-participant-response.dto'
 import { CreateParticipantDto } from '../interfaces/participant/dto/create-participant.dto'
@@ -54,7 +55,8 @@ import { ParticipantIdDto } from './../interfaces/participant/dto/participant-id
 export class ParticipantsController {
   constructor(
     @Inject('TOKEN_SERVICE') private readonly tokenServiceClient: ClientProxy,
-    @Inject('USER_SERVICE') private readonly userServiceClient: ClientProxy
+    @Inject('USER_SERVICE') private readonly userServiceClient: ClientProxy,
+    @Inject('CERTIFICATE_SERVICE') private readonly certificateServiceClient: ClientProxy
   ) { }
 
   @Get()
@@ -206,7 +208,7 @@ export class ParticipantsController {
     @Param() params: ParticipantIdDto,
     @Body() participantRequest: UpdateParticipantDto
   ): Promise<UpdateParticipantResponseDto> {
-    const { name, email, dob, phone, institution } = participantRequest
+    const { name, email, dob, phone, institution, cpf } = participantRequest
     const updateParticipantResponse: IServiceParticipantUpdateByIdResponse = await this.userServiceClient
       .send('user_update_by_id', {
         user: {
@@ -215,7 +217,8 @@ export class ParticipantsController {
           personal_data: {
             dob: dob,
             phone: phone,
-            institution: institution
+            institution: institution,
+            cpf: cpf
           }
         },
         id: params.id
@@ -249,6 +252,25 @@ export class ParticipantsController {
   public async deleteUser(
     @Param() params: UserIdDto
   ): Promise<DeleteUserResponseDto> {
+    const certificateListResponse: IServiceCertificateListResponse = await this.certificateServiceClient
+      .send('certificate_list', {
+        user: params.id,
+        page: 1,
+        perPage: 1
+      })
+      .toPromise()
+
+    if (certificateListResponse?.data?.totalCount > 0) {
+      throw new HttpException(
+        {
+          message: 'participant_delete_conflict',
+          errors: null,
+          data: null
+        },
+        HttpStatus.CONFLICT
+      )
+    }
+
     const deleteUserResponse: IServiceUserDeleteResponse = await this.userServiceClient
       .send('user_delete_by_id', {
         id: params.id,

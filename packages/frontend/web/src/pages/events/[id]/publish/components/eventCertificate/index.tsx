@@ -11,110 +11,41 @@ import {
 import { IModelCertificate } from '@dtos'
 import { Certificate } from '@pages/events/[id]/[tab]/components'
 import { initialTextConfig } from '@pages/events/[id]/[tab]/components/certificateLayout'
-import { useCallback, useState } from 'react'
-import { FiAward, FiCheck, FiCheckSquare, FiSquare, FiX } from 'react-icons/fi'
+import { api } from '@services'
+import { useCallback, useEffect, useState } from 'react'
+import { FiAward, FiCheck, FiCheckSquare, FiX } from 'react-icons/fi'
 
 import { CardContainer, Container, Header } from './styles'
 
-// import { ICertificate } from '../../dtos/ICertificate'
-// import { Row } from '../../styles/components/grid'
-// import {
-//   CardContainer,
-//   Header,
-//   Container
-// } from '../../styles/components/steps/eventCertificate'
-// import Certificate from '../accordions/certificate'
-// import { initialTextConfig } from '../accordions/certificateLayout'
-// import Button from '../button'
-// import Modal from '../modal'
-// import Table from '../table'
+interface Props {
+  event: any
+}
 
-export const EventCertificate: React.FC = () => {
+export const EventCertificate: React.FC<Props> = ({ event }) => {
   const [openModal, setOpenModal] = useState(false)
+  const [certificateSelected, setCertificateSelected] = useState(null)
+  const [certificateList, setCertificateList] = useState<IModelCertificate[]>([])
 
   const handleCloseModal = useCallback(() => {
     setOpenModal(false)
   }, [])
 
-  const [certificateSelected, setCertificateSelected] = useState(null)
+  useEffect(() => {
+    if (!event?.id) return
+    const load = async () => {
+      try {
+        const response = await api.get(`events/${event.id}/models`)
+        if (response?.data?.data) setCertificateList(response.data.data)
+      } catch (_) { }
+    }
+    load()
+  }, [event?.id])
 
-  const [certificateList, setCertificateList] = useState<IModelCertificate[]>([
-    // {
-    //   confirmed: true,
-    //   id: '1',
-    //   name: 'Modelo Padrão 3',
-    //   front: {
-    //     img: "'/teste1.png'",
-    //     text:
-    //       '<p>Certificamos que <strong>[participante_nome]</strong> participou da <strong>[evento_edicao] [evento_nome] ([evento_sigla])</strong> do Instituto Federal de Educação, Ciência e Tecnologia da Bahia (IFBA) Campus Vitória da Conquista, realizada no período de <strong>[participacao_periodo]</strong>, com carga horária de <strong>[participacao_carga_horaria]</strong></p>'
-    //   },
-    //   roles: [
-    //     {
-    //       number: 1,
-    //       activity: {
-    //         name: 'Mesa Redonda',
-    //         id: '1'
-    //       },
-    //       function: {
-    //         name: 'Palestrante',
-    //         id: '1'
-    //       }
-    //     },
-    //     {
-    //       number: 2,
-    //       activity: {
-    //         name: 'Mesa Redonda',
-    //         id: '1'
-    //       },
-    //       function: {
-    //         name: 'Professor',
-    //         id: '1'
-    //       }
-    //     }
-    //   ]
-    // },
-    // {
-    //   confirmed: false,
-    //   id: '2',
-    //   name: 'Modelo para Professores',
-    //   front: {
-    //     img: "'/teste.jpeg'",
-    //     text:
-    //       '<p>Certificamos que <strong>[participante_nome]</strong> participou da <strong>[evento_edicao] [evento_nome] ([evento_sigla])</strong> do Instituto Federal de Educação, Ciência e Tecnologia da Bahia (IFBA) Campus Vitória da Conquista, realizada no período de <strong>[participacao_periodo]</strong>, com carga horária de <strong>[participacao_carga_horaria]</strong></p>'
-    //   },
-    //   verse: {
-    //     img: "'/teste.jpeg'",
-    //     text:
-    //       '<p>Certificamos que <strong>[participante_nome]</strong> participou da <strong>[evento_edicao] [evento_nome] ([evento_sigla])</strong> do Instituto Federal de Educação, Ciência e Tecnologia da Bahia (IFBA) Campus Vitória da Conquista, realizada no período de <strong>[participacao_periodo]</strong>, com carga horária de <strong>[participacao_carga_horaria]</strong></p>'
-    //   },
-    //   roles: [
-    //     {
-    //       number: 1,
-    //       activity: {
-    //         name: 'Mesa Redonda',
-    //         id: '1'
-    //       },
-    //       function: {
-    //         name: 'Palestrante',
-    //         id: '1'
-    //       }
-    //     },
-    //     {
-    //       number: 2,
-    //       activity: {
-    //         name: 'Mesa Redonda',
-    //         id: '1'
-    //       },
-    //       function: {
-    //         name: 'Professor',
-    //         id: '1'
-    //       }
-    //     }
-    //   ]
-    // }
-  ])
   return (
     <Container>
+      {certificateList.length === 0 && (
+        <p style={{ padding: '16px' }}>Nenhum modelo de certificado cadastrado para este evento.</p>
+      )}
       <Grid cols={3}>
         {certificateList.map((certificate, index) => (
           <CardContainer key={index}>
@@ -127,11 +58,11 @@ export const EventCertificate: React.FC = () => {
             <main>
               <Table>
                 <tbody>
-                  {certificate.criterions.map((criterion, index) => (
-                    <tr key={index}>
-                      <td>{index + 1}</td>
-                      {/* <td>{criterion.activity.name}</td>
-                      <td>{criterion.function.name}</td> */}
+                  {certificate.criterions.map((criterion, i) => (
+                    <tr key={i}>
+                      <td>{i + 1}</td>
+                      <td>{criterion.type_activity_id}</td>
+                      <td>{criterion.function_id}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -139,7 +70,6 @@ export const EventCertificate: React.FC = () => {
             </main>
             <footer>
               <Button
-                // outline={!certificate.confirmed}
                 color="secondary"
                 size="small"
                 type="button"
@@ -149,16 +79,8 @@ export const EventCertificate: React.FC = () => {
                 }}
                 inline
               >
-                {/* {certificate.confirmed && (
-                  <>
-                    <FiCheckSquare size={20} /> <span>Confirmado</span>
-                  </>
-                )}
-                {!certificate.confirmed && (
-                  <>
-                    <FiSquare size={20} /> <span>Confirmar</span>
-                  </>
-                )} */}
+                <FiCheckSquare size={20} />
+                <span>Visualizar</span>
               </Button>
             </footer>
           </CardContainer>
@@ -176,12 +98,12 @@ export const EventCertificate: React.FC = () => {
           <MainModal>
             <Certificate
               preview="true"
-              image={certificateSelected?.front.img}
+              image={certificateSelected?.pages?.[0]?.image}
               validateHorizontalPosition={
                 initialTextConfig.validateHorizontalPosition as
-                  | 'center'
-                  | 'right'
-                  | 'left'
+                | 'center'
+                | 'right'
+                | 'left'
               }
               validateVerticalPosition={
                 initialTextConfig.validateVerticalPosition as 'bottom' | 'top'
@@ -194,7 +116,7 @@ export const EventCertificate: React.FC = () => {
               }
               padding={initialTextConfig.padding}
               position={initialTextConfig.position as 'center' | 'custom'}
-              html={certificateSelected?.front.text}
+              html={certificateSelected?.pages?.[0]?.text}
               paddingBottom={initialTextConfig.paddingBottom}
               paddingTop={initialTextConfig.paddingTop}
               paddingLeft={initialTextConfig.paddingLeft}
@@ -212,11 +134,11 @@ export const EventCertificate: React.FC = () => {
             outline
           >
             <FiX size={20} />
-            <span>Cancelar</span>
+            <span>Fechar</span>
           </Button>
-          <Button inline color="secondary" type="button">
+          <Button inline color="secondary" type="button" onClick={handleCloseModal}>
             <FiCheck size={20} />
-            <span>Confirmar</span>
+            <span>OK</span>
           </Button>
         </FooterModal>
       </Modal>

@@ -15,7 +15,7 @@ import { api } from '@services'
 import Head from 'next/head'
 import { useRouter } from 'next/router'
 import { useCallback, useEffect, useState } from 'react'
-import { FiChevronLeft, FiSend, FiChevronRight, FiCheck } from 'react-icons/fi'
+import { FiCheck, FiChevronLeft, FiChevronRight, FiSend } from 'react-icons/fi'
 
 import { EventInfo } from '../components'
 import { EventActivity, EventCertificate, PublishSuccess } from './components'
@@ -81,7 +81,9 @@ const Publish: React.FC = () => {
     if (id) loadData()
   }, [id, addToast])
 
-  // const [steps, setSteps] = useState(getStepList(stepConfig, 0))
+  const stepNames = [infoName, activityName, modelName, endName]
+  const [step, setStep] = useState(0)
+  const currentStep = stepNames[step]
 
   const publish = useCallback(async () => {
     setLoading(true)
@@ -106,27 +108,24 @@ const Publish: React.FC = () => {
         <title>Publicar {event?.name} | Evento</title>
       </Head>
       <Header title={`Publicar ${event?.name}`} icon={FiSend} />
-      {/* <Stepper steps={steps} /> */}
-      {/* {getSelected(steps).name !== endName && (
+      {currentStep !== endName && (
         <Alert marginBottom="md" card={true} type="warning">
           <b>Atenção!</b> Revise as informações antes de publicar o evento.
         </Alert>
       )}
-
       <Card>
         <CardHeader>
           <Button
-            disabled={getSelected(steps).name === endName}
+            disabled={currentStep === endName}
             ghost
             color="secondary"
             size="default"
             type="button"
             onClick={() => {
-              const selected = getSelected(steps)
-              if (selected.name === infoName) {
+              if (currentStep === infoName) {
                 router.push(`/events/${event.id}/info`)
               } else {
-                setSteps(getStepList(stepConfig, selected.id - 1))
+                setStep(s => s - 1)
               }
             }}
             inline
@@ -135,58 +134,53 @@ const Publish: React.FC = () => {
             <span>Voltar</span>
           </Button>
           <Button
-            color={'primary'}
+            color="primary"
             size="default"
             type="button"
             loading={loading}
             disabled={loading}
             onClick={() => {
-              const selected = getSelected(steps)
-              if (selected.name === endName) {
+              if (currentStep === endName) {
                 router.push(`/events/${event.id}/info`)
-              } else if (selected.name === modelName) {
-                publish()
-                  .then(publish => {
-                    if (publish)
-                      setSteps(getStepList(stepConfig, selected.id + 1))
-                  })
-                  .catch()
+              } else if (currentStep === modelName) {
+                publish().then(success => {
+                  if (success) setStep(s => s + 1)
+                })
               } else {
-                setSteps(getStepList(stepConfig, selected.id + 1))
+                setStep(s => s + 1)
               }
             }}
             inline
           >
-            {getSelected(steps).name === endName && (
+            {currentStep === endName && (
               <>
                 <FiCheck size={20} />
                 <span>Concluir</span>
               </>
             )}
-            {getSelected(steps).name === modelName && (
+            {currentStep === modelName && (
               <>
                 <FiCheck size={20} />
                 <span>Publicar</span>
               </>
             )}
-            {getSelected(steps).name !== modelName &&
-              getSelected(steps).name !== endName && (
-                <>
-                  <FiChevronRight size={20} />
-                  <span>Avançar</span>
-                </>
-              )}
+            {currentStep !== modelName && currentStep !== endName && (
+              <>
+                <FiChevronRight size={20} />
+                <span>Avançar</span>
+              </>
+            )}
           </Button>
         </CardHeader>
-        {getSelected(steps).name === infoName && (
+        {currentStep === infoName && (
           <EventInfo edit={false} event={event} setEvent={setEvent} />
         )}
-        {getSelected(steps).name === activityName && (
+        {currentStep === activityName && (
           <EventActivity addToast={addToast} event={event} />
         )}
-        {getSelected(steps).name === modelName && <EventCertificate />}
-        {getSelected(steps).name === endName && <PublishSuccess />}
-      </Card> */}
+        {currentStep === modelName && <EventCertificate event={event} />}
+        {currentStep === endName && <PublishSuccess />}
+      </Card>
     </Container>
   )
 }

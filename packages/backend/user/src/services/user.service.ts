@@ -8,7 +8,6 @@ import { IUserListParams } from '../interfaces/user-list-params.interface'
 import { DataResponse } from '../interfaces/user-list-response.interface'
 import { IUserUpdateParams } from '../interfaces/user-update-params.interface'
 import { IUser } from '../interfaces/user.interface'
-import { securePassword } from '../utils/generators'
 import { ConfigService } from './config/config.service'
 
 @Injectable()
@@ -90,8 +89,6 @@ export class UserService {
       UserModel.personal_data.phone = userParams.personal_data.phone
     if (userParams?.email !== undefined) {
       UserModel.email = userParams.email
-      UserModel.is_confirmed = false
-      UserModel.password = securePassword()
     }
 
     return UserModel.save()
