@@ -10,23 +10,23 @@ import {
   ScrollWrapper
 } from '@components'
 import { IUser } from '@dtos'
-import { useToast } from '@providers'
+import { useAuth, useToast } from '@providers'
 import { api, PaginatedRequest } from '@services'
 import { FormHandles } from '@unform/core'
 import { Form } from '@unform/web'
-import { getValidationErrors } from '@utils'
+import { getValidationErrors, isValidEmail, maskEmail } from '@utils'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import {
-  FiEdit,
-  FiPlus,
-  FiUser,
-  FiX,
-  FiMail,
   FiCheck,
-  FiUserPlus,
-  FiUnlock,
+  FiEdit,
+  FiKey,
   FiLock,
-  FiKey
+  FiMail,
+  FiPlus,
+  FiUnlock,
+  FiUser,
+  FiUserPlus,
+  FiX
 } from 'react-icons/fi'
 import * as Yup from 'yup'
 
@@ -38,6 +38,9 @@ interface Props {
   request: PaginatedRequest<any, any>
 }
 
+const displayEmail = (email: string, isAdmin: boolean): string =>
+  isAdmin ? email : maskEmail(email)
+
 export const UserModal: React.FC<Props> = ({
   type,
   openModal,
@@ -46,6 +49,7 @@ export const UserModal: React.FC<Props> = ({
   request
 }) => {
   const [loading, setLoading] = useState(false)
+  const { isAdmin } = useAuth()
   const { addToast } = useToast()
 
   const formRef = useRef<FormHandles>(null)
@@ -74,12 +78,12 @@ export const UserModal: React.FC<Props> = ({
 
         if (type === 'add' || type === 'update-email') {
           schemaObj.repeatEmail = Yup.string()
-            .email('Por favor, digite um e-mail válido')
+            .test('email-is-valid', 'Por favor, digite um e-mail válido', isValidEmail)
             .required('Você precisa confirmar o e-mail')
             .oneOf([data.email], 'Os e-mails devem ser iguais.')
             .notOneOf([user?.email], 'O e-mail deve ser diferente do atual')
           schemaObj.email = Yup.string()
-            .email('Por favor, digite um e-mail válido')
+            .test('email-is-valid', 'Por favor, digite um e-mail válido', isValidEmail)
             .required('O usuário precisa ter um e-mail')
             .notOneOf([user?.email], 'O e-mail deve ser diferente do atual')
         }
@@ -102,15 +106,13 @@ export const UserModal: React.FC<Props> = ({
 
         addToast({
           type: 'success',
-          title: `O usuário foi ${
-            type === 'add' ? 'cadastrado' : 'atualizado'
-          }`,
+          title: `O usuário foi ${type === 'add' ? 'cadastrado' : 'atualizado'
+            }`,
           description:
             type === 'update-email'
               ? 'O e-mail foi atualizado, peça para o usuário confirmar sua conta.'
-              : `${data.name} foi ${
-                  type === 'add' ? 'cadastrado' : 'atualizado'
-                } com sucesso.`
+              : `${data.name} foi ${type === 'add' ? 'cadastrado' : 'atualizado'
+              } com sucesso.`
         })
         request.revalidate()
         setLoading(false)
@@ -125,13 +127,12 @@ export const UserModal: React.FC<Props> = ({
         setLoading(false)
         addToast({
           type: 'error',
-          title: `Erro ao ${
-            type === 'update-email'
-              ? 'atualizar o e-mail'
-              : type === 'update'
+          title: `Erro ao ${type === 'update-email'
+            ? 'atualizar o e-mail'
+            : type === 'update'
               ? 'atualizar o usuário'
               : 'adicionar o usuário'
-          }`,
+            }`,
           description: err
         })
       }
@@ -184,7 +185,7 @@ export const UserModal: React.FC<Props> = ({
                   E-mail atual:
                 </Alert>
                 <Alert size="sm" icon={FiMail} marginBottom="xs">
-                  <b>{user?.email}</b>
+                  <b>{displayEmail(user?.email, isAdmin)}</b>
                 </Alert>
                 <Alert
                   type={user?.is_confirmed ? 'success' : 'danger'}
@@ -203,7 +204,7 @@ export const UserModal: React.FC<Props> = ({
                   O e-mail de {user?.name} é:
                 </Alert>
                 <Alert size="sm" icon={FiMail} marginBottom="md">
-                  <b>{user?.email}</b>
+                  <b>{displayEmail(user?.email, isAdmin)}</b>
                 </Alert>
               </>
             )}

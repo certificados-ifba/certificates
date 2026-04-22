@@ -8,7 +8,6 @@ import { IUserListParams } from '../interfaces/user-list-params.interface'
 import { DataResponse } from '../interfaces/user-list-response.interface'
 import { IUserUpdateParams } from '../interfaces/user-update-params.interface'
 import { IUser } from '../interfaces/user.interface'
-import { securePassword } from '../utils/generators'
 import { ConfigService } from './config/config.service'
 
 @Injectable()
@@ -17,7 +16,7 @@ export class UserService {
     @InjectModel('User') private readonly UserModel: Model<IUser>,
     @InjectModel('UserLink') private readonly UserLinkModel: Model<IUserLink>,
     private readonly configService: ConfigService
-  ) {}
+  ) { }
 
   public async searchUserByEmail(email: string): Promise<IUser> {
     return this.UserModel.findOne({
@@ -90,8 +89,6 @@ export class UserService {
       UserModel.personal_data.phone = userParams.personal_data.phone
     if (userParams?.email !== undefined) {
       UserModel.email = userParams.email
-      UserModel.is_confirmed = false
-      UserModel.password = securePassword()
     }
 
     return UserModel.save()
@@ -138,6 +135,10 @@ export class UserService {
 
   public getConfirmationLink(link: string): string {
     return `${this.configService.get('webUrl')}/confirm/${link}`
+  }
+
+  public getParticipantConfirmationLink(link: string): string {
+    return `${this.configService.get('webUrl')}/participants/confirm/${link}`
   }
 
   public getWebUrl(): string {

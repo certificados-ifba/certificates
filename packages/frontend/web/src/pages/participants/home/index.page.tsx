@@ -2,23 +2,42 @@ import { Alert, Button, Card, Grid, Loading } from '@components'
 import { withoutAuth } from '@hocs'
 import { ParticipantLayout } from '@layouts'
 import { useAuth } from '@providers'
-import { api, getToken } from '@services'
-import { capitalize } from '@utils'
+import { api } from '@services'
+import { capitalize, maskEmail } from '@utils'
 import Head from 'next/head'
 import { useRouter } from 'next/router'
 import { useEffect, useState } from 'react'
 import {
-  FiMail,
-  FiCreditCard,
+  FiBook,
   FiCalendar,
-  FiUser,
   FiChevronLeft,
+  FiCreditCard,
+  FiMail,
   FiPhoneCall,
-  FiBook
+  FiUser
 } from 'react-icons/fi'
 
-import { Certificates, Events } from './components'
+import { Certificates } from './components'
 import { Container, FormContainer } from './styles'
+
+const maskCpf = (cpf: string): string => {
+  if (!cpf) return ''
+  const clean = cpf.replace(/\D/g, '')
+  if (clean.length !== 11) return cpf
+  return `***.${clean.slice(3, 6)}.${clean.slice(6, 9)}-**`
+}
+
+const maskDob = (dob: string): string => {
+  if (!dob) return ''
+  const str = String(dob)
+  if (/^\d{4}-\d{2}-\d{2}/.test(str)) {
+    return `${str.slice(8, 10)}/${str.slice(5, 7)}/****`
+  }
+  if (str.length >= 6) {
+    return str.substring(0, 6) + '****'
+  }
+  return '****'
+}
 
 const Home: React.FC = () => {
   const [token, setToken] = useState(null)
@@ -108,7 +127,7 @@ const Home: React.FC = () => {
                   E-mail:
                 </Alert>
                 <Alert icon={FiMail}>
-                  <b>{participant.email}</b>
+                  <b>{maskEmail(participant.email)}</b>
                 </Alert>
               </div>
               <div>
@@ -116,7 +135,7 @@ const Home: React.FC = () => {
                   CPF:
                 </Alert>
                 <Alert icon={FiCreditCard}>
-                  <b>{participant.cpf}</b>
+                  <b>{maskCpf(participant.cpf)}</b>
                 </Alert>
               </div>
             </Grid>
@@ -127,7 +146,7 @@ const Home: React.FC = () => {
                     Data de Nascimento:
                   </Alert>
                   <Alert icon={FiCalendar}>
-                    <b>{participant.dob}</b>
+                    <b>{maskDob(participant.dob)}</b>
                   </Alert>
                 </div>
                 <div>

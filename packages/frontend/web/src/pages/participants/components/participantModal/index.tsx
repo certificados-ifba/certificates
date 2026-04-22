@@ -66,22 +66,19 @@ export const ParticipantModal: React.FC<Props> = ({
           abortEarly: false
         })
 
+        data.cpf = data.cpf.replace(/[^\d]+/g, '')
         if (type === 'add') {
-          data.cpf = data.cpf.replace(/[^\d]+/g, '')
           await api.post('participants', data)
         } else {
-          delete data.cpf
           await api.put(`participants/${participant.id}`, data)
         }
 
         addToast({
           type: 'success',
-          title: `O participante ${
-            type === 'add' ? 'cadastrado' : 'atualizado'
-          }`,
-          description: `${data.name} foi ${
-            type === 'add' ? 'cadastrado' : 'atualizado'
-          } com sucesso.`
+          title: `O participante ${type === 'add' ? 'cadastrado' : 'atualizado'
+            }`,
+          description: `${data.name} foi ${type === 'add' ? 'cadastrado' : 'atualizado'
+            } com sucesso.`
         })
         request.revalidate()
         setLoading(false)
@@ -96,9 +93,8 @@ export const ParticipantModal: React.FC<Props> = ({
         setLoading(false)
         addToast({
           type: 'error',
-          title: `Erro ao ${
-            type === 'update' ? 'atualizar' : 'adicionar'
-          } o participante`,
+          title: `Erro ao ${type === 'update' ? 'atualizar' : 'adicionar'
+            } o participante`,
           description: err
         })
       }
@@ -157,7 +153,7 @@ export const ParticipantModal: React.FC<Props> = ({
                 placeholder="CPF"
                 type="cpf"
                 icon={FiCreditCard}
-                disabled={type === 'update' || loading}
+                disabled={loading}
               />
               <Input
                 marginBottom="sm"

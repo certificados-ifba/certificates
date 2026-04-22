@@ -23,6 +23,11 @@ export class UpdateParticipantDto {
   phone: string
 
   @ApiProperty({
+    example: '00000000000'
+  })
+  cpf: string
+
+  @ApiProperty({
     example: true
   })
   institution: boolean

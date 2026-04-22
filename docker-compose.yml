@@ -3,6 +3,8 @@ services:
     build:
       context: .
       dockerfile: ./docker/Dockerfile.web
+      args:
+        API_URI: ${API_URI:-http://localhost:4001}
     hostname: web
     env_file:
       - .env

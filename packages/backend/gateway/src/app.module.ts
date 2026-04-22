@@ -15,12 +15,12 @@ import { ParticipantsController } from './controllers/participants.controller'
 import { PasswordController } from './controllers/password.controller'
 import { ResumeController } from './controllers/resume.controller'
 import { SessionsController } from './controllers/sessions.controller'
+import { StatusAppController } from './controllers/status-app.controller'
 import { UploadController } from './controllers/upload.controller'
 import { UsersController } from './controllers/users.controller'
 import { ConfigService } from './services/config/config.service'
 import { AuthGuard } from './services/guards/authorization.guard'
 import { PermissionGuard } from './services/guards/permission.guard'
-import { StatusAppController } from './controllers/status-app.controller'
 
 @Module({
   imports: [
@@ -110,6 +110,13 @@ import { StatusAppController } from './controllers/status-app.controller'
       inject: [ConfigService]
     },
     {
+      provide: 'MAILER_SERVICE',
+      useFactory: (configService: ConfigService) => {
+        return ClientProxyFactory.create(configService.get('mailerService'))
+      },
+      inject: [ConfigService]
+    },
+    {
       provide: APP_GUARD,
       useClass: AuthGuard
     },
@@ -123,4 +130,4 @@ import { StatusAppController } from './controllers/status-app.controller'
     // }
   ]
 })
-export class AppModule {}
+export class AppModule { }

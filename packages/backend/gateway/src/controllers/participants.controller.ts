@@ -1,24 +1,24 @@
 import {
+  Body,
   Controller,
+  Delete,
+  Get,
+  HttpException,
+  HttpStatus,
+  Inject,
+  Param,
   Post,
   Put,
-  Get,
-  Body,
-  Inject,
-  HttpStatus,
-  HttpException,
-  Param,
-  Res,
   Query,
-  Delete,
-  Req
+  Req,
+  Res
 } from '@nestjs/common'
 import { ClientProxy } from '@nestjs/microservices'
 import {
-  ApiTags,
-  ApiOkResponse,
+  ApiBearerAuth,
   ApiCreatedResponse,
-  ApiBearerAuth
+  ApiOkResponse,
+  ApiTags
 } from '@nestjs/swagger'
 import { Request, Response } from 'express'
 import * as requestIp from 'request-ip'
@@ -26,6 +26,7 @@ import * as parser from 'ua-parser-js'
 
 import { Authorization } from '../decorators/authorization.decorator'
 import { Permission } from '../decorators/permission.decorator'
+import { IServiceCertificateListResponse } from '../interfaces/certificate/service-certificate-list-response.interface'
 import { IAuthorizedRequest } from '../interfaces/common/authorized-request.interface'
 import { CreateParticipantResponseDto } from '../interfaces/participant/dto/create-participant-response.dto'
 import { CreateParticipantDto } from '../interfaces/participant/dto/create-participant.dto'
@@ -43,6 +44,7 @@ import { AuthParticipantDto } from '../interfaces/user/dto/auth-participant.dto'
 import { DeleteUserResponseDto } from '../interfaces/user/dto/delete-user-response.dto'
 import { LoginUserResponseDto } from '../interfaces/user/dto/login-user-response.dto'
 import { UserIdDto } from '../interfaces/user/dto/user-id.dto'
+import { IServiceUserConfirmResponse } from '../interfaces/user/service-user-confirm-response.interface'
 import { IServiceUserDeleteResponse } from '../interfaces/user/service-user-delete-response.interface'
 import { IServiceUserSearchResponse } from '../interfaces/user/service-user-search-response.interface'
 import { ParticipantIdDto } from './../interfaces/participant/dto/participant-id.dto'
@@ -53,8 +55,9 @@ import { ParticipantIdDto } from './../interfaces/participant/dto/participant-id
 export class ParticipantsController {
   constructor(
     @Inject('TOKEN_SERVICE') private readonly tokenServiceClient: ClientProxy,
-    @Inject('USER_SERVICE') private readonly userServiceClient: ClientProxy
-  ) {}
+    @Inject('USER_SERVICE') private readonly userServiceClient: ClientProxy,
+    @Inject('CERTIFICATE_SERVICE') private readonly certificateServiceClient: ClientProxy
+  ) { }
 
   @Get()
   @Authorization(true)
@@ -144,6 +147,35 @@ export class ParticipantsController {
     }
   }
 
+  @Get('confirm/:token')
+  @ApiOkResponse({
+    description: 'Confirm participant email address'
+  })
+  public async confirmParticipantEmail(
+    @Param('token') token: string
+  ): Promise<{ message: string; data: null; errors: null }> {
+    const confirmResponse: IServiceUserConfirmResponse = await this.userServiceClient
+      .send('participant_confirm', token)
+      .toPromise()
+
+    if (confirmResponse.status !== HttpStatus.OK) {
+      throw new HttpException(
+        {
+          message: confirmResponse.message,
+          data: null,
+          errors: null
+        },
+        confirmResponse.status
+      )
+    }
+
+    return {
+      message: confirmResponse.message,
+      data: null,
+      errors: null
+    }
+  }
+
   @Get(':id')
   @Authorization(true)
   @Permission('participant_get_by_id')
@@ -176,7 +208,7 @@ export class ParticipantsController {
     @Param() params: ParticipantIdDto,
     @Body() participantRequest: UpdateParticipantDto
   ): Promise<UpdateParticipantResponseDto> {
-    const { name, email, dob, phone, institution } = participantRequest
+    const { name, email, dob, phone, institution, cpf } = participantRequest
     const updateParticipantResponse: IServiceParticipantUpdateByIdResponse = await this.userServiceClient
       .send('user_update_by_id', {
         user: {
@@ -185,7 +217,8 @@ export class ParticipantsController {
           personal_data: {
             dob: dob,
             phone: phone,
-            institution: institution
+            institution: institution,
+            cpf: cpf
           }
         },
         id: params.id
@@ -219,6 +252,25 @@ export class ParticipantsController {
   public async deleteUser(
     @Param() params: UserIdDto
   ): Promise<DeleteUserResponseDto> {
+    const certificateListResponse: IServiceCertificateListResponse = await this.certificateServiceClient
+      .send('certificate_list', {
+        user: params.id,
+        page: 1,
+        perPage: 1
+      })
+      .toPromise()
+
+    if (certificateListResponse?.data?.totalCount > 0) {
+      throw new HttpException(
+        {
+          message: 'participant_delete_conflict',
+          errors: null,
+          data: null
+        },
+        HttpStatus.CONFLICT
+      )
+    }
+
     const deleteUserResponse: IServiceUserDeleteResponse = await this.userServiceClient
       .send('user_delete_by_id', {
         id: params.id,
@@ -273,9 +325,8 @@ export class ParticipantsController {
       .send('token_create', {
         user: getUserResponse.data.user,
         ip: requestIp.getClientIp(req).split(':').pop(),
-        device: `${agent.device.model ? agent.device.model + ' - ' : ''}${
-          agent.os.name
-        } ${agent.os.version} - ${agent.browser.name}`,
+        device: `${agent.device.model ? agent.device.model + ' - ' : ''}${agent.os.name
+          } ${agent.os.version} - ${agent.browser.name}`,
         where: req.headers.location
       })
       .toPromise()

@@ -20,7 +20,6 @@
   },
   "devDependencies": {
     "@certificates/eslint-config": "*",
-    "@types/react": "^19.2.10",
     "dotenv": "^8.2.0",
     "typescript": "^4.2.3"
   },

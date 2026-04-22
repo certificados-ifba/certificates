@@ -1,11 +1,11 @@
 import {
-    Alert,
-    Button,
-    Column,
-    DeleteModal,
-    Input,
-    PaginatedTable,
-    TableRow
+  Alert,
+  Button,
+  Column,
+  DeleteModal,
+  Input,
+  PaginatedTable,
+  TableRow
 } from '@components'
 import { IActivity, IEvent, IGeneric, IParticipant } from '@dtos'
 import { useToast } from '@providers'
@@ -16,17 +16,24 @@ import { capitalize } from '@utils'
 import { useRouter } from 'next/router'
 import { useCallback, useRef, useState } from 'react'
 import {
-    FiDownload,
-    FiExternalLink,
-    FiFilePlus,
-    FiMinusCircle,
-    FiPlus,
-    FiSearch
+  FiDownload,
+  FiExternalLink,
+  FiFilePlus,
+  FiMinusCircle,
+  FiPlus,
+  FiSearch
 } from 'react-icons/fi'
 
 interface Props {
   event: IEvent
   openAccordion: () => void
+}
+
+const maskCpf = (cpf: string): string => {
+  if (!cpf) return ''
+  const clean = cpf.replace(/\D/g, '')
+  if (clean.length !== 11) return cpf
+  return `***.${clean.slice(3, 6)}.${clean.slice(6, 9)}-**`
 }
 interface ICertificate {
   id: string
@@ -65,8 +72,8 @@ export const CertificateList: React.FC<Props> = ({ event, openAccordion }) => {
       filters && order !== ''
         ? Object.assign(filters, { sort_by: column, order_by: order })
         : order !== ''
-        ? { sort_by: column, order_by: order }
-        : filters
+          ? { sort_by: column, order_by: order }
+          : filters
   })
 
   const handleFilter = useCallback(
@@ -165,19 +172,22 @@ export const CertificateList: React.FC<Props> = ({ event, openAccordion }) => {
           {request.data?.data?.map(
             ({
               id,
-              activity,
-              participant,
-              function: certFunction,
+              activity: { name: activity },
+              participant: {
+                name,
+                personal_data: { cpf }
+              },
+              function: { name: _function },
               workload,
               start_date,
               end_date,
               created_at
             }) => (
               <tr key={id}>
-                <td>{participant?.name}</td>
-                <td>{participant?.personal_data?.cpf}</td>
-                <td>{activity?.name}</td>
-                <td>{capitalize(certFunction?.name || '-')}</td>
+                <td>{name}</td>
+                <td>{maskCpf(cpf)}</td>
+                <td>{activity}</td>
+                <td>{capitalize(_function)}</td>
                 <td>
                   {workload} Hora{Number(workload) > 1 && 's'}
                 </td>

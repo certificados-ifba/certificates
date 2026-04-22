@@ -38,6 +38,7 @@ import { IServiceEventCreateResponse } from '../interfaces/event/service-event-c
 import { IServiceEventDeleteResponse } from '../interfaces/event/service-event-delete-response.interface'
 import { IServiceEventGetByIdResponse } from '../interfaces/event/service-event-get-by-id-response.interface'
 import { IServiceEventListResponse } from '../interfaces/event/service-event-list-response.interface'
+import { IServiceEventPublishByIdResponse } from '../interfaces/event/service-event-publish-by-id-response.interface'
 import { IServiceEventUpdateByIdResponse } from '../interfaces/event/service-event-update-by-id-response.interface'
 
 @Controller('events')
@@ -45,8 +46,10 @@ import { IServiceEventUpdateByIdResponse } from '../interfaces/event/service-eve
 @ApiTags('events')
 export class EventsController {
   constructor(
-    @Inject('EVENT_SERVICE') private readonly eventServiceClient: ClientProxy
-  ) {}
+    @Inject('EVENT_SERVICE') private readonly eventServiceClient: ClientProxy,
+    @Inject('CERTIFICATE_SERVICE') private readonly certificateServiceClient: ClientProxy,
+    @Inject('MAILER_SERVICE') private readonly mailerServiceClient: ClientProxy
+  ) { }
 
   @Get(':id')
   @Authorization(true)
@@ -215,6 +218,84 @@ export class EventsController {
       data: {
         event: updateEventResponse.event
       },
+      errors: null
+    }
+  }
+
+  @Post(':id/publish')
+  @Authorization(true)
+  @Permission('event_publish_by_id')
+  public async publishEvent(
+    @Req() request: IAuthorizedRequest,
+    @Param() params: EventIdDto
+  ): Promise<{ message: string; data: { event: any } | null; errors: any }> {
+    const publishResponse: IServiceEventPublishByIdResponse = await this.eventServiceClient
+      .send('event_publish_by_id', { id: params.id, user: request.user })
+      .toPromise()
+
+    if (publishResponse.status !== HttpStatus.OK) {
+      throw new HttpException(
+        {
+          message: publishResponse.message,
+          data: null,
+          errors: publishResponse.errors
+        },
+        publishResponse.status
+      )
+    }
+
+    // Enviar e-mail para todos os participantes do evento
+    try {
+      const event = publishResponse.event
+      const site = process.env.WEB_URL || 'http://certificados.conquista.ifba.edu.br'
+      const formatDate = (d: Date | string): string => {
+        const date = new Date(d)
+        return date.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric', timeZone: 'UTC' })
+      }
+
+      const certResponse = await this.certificateServiceClient
+        .send('certificate_list', {
+          event: params.id,
+          page: 1,
+          perPage: 10000,
+          sortBy: 'created_at',
+          orderBy: 'ASC'
+        })
+        .toPromise()
+
+      if (certResponse?.data?.certificates?.length) {
+        const seen = new Set<string>()
+        for (const cert of certResponse.data.certificates) {
+          const participant = cert.participant
+          if (!participant?.email) continue
+          if (seen.has(participant.email)) continue
+          seen.add(participant.email)
+
+          this.mailerServiceClient
+            .send('mail_send', {
+              to: participant.email,
+              subject: `Certificados disponíveis — ${event.name}`,
+              template: '/templates/certificate_available',
+              context: {
+                name: participant.name,
+                event_name: event.name,
+                start_date: formatDate(event.start_date),
+                end_date: formatDate(event.end_date),
+                site,
+                email: participant.email
+              }
+            })
+            .toPromise()
+            .catch(err => console.error(`Erro ao enviar e-mail para ${participant.email}:`, err))
+        }
+      }
+    } catch (err) {
+      console.error('Erro ao enviar e-mails de certificados disponíveis:', err)
+    }
+
+    return {
+      message: publishResponse.message,
+      data: { event: publishResponse.event },
       errors: null
     }
   }

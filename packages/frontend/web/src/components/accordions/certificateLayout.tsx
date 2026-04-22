@@ -39,7 +39,7 @@ const initialValidatePadding = {
 const initialTextPosition = 'center'
 const initialValidatePosition = {
   validateVerticalPosition: 'bottom',
-  validateHorizontalPosition: 'right',
+  validateHorizontalPosition: 'center',
   codeOrientation: 'horizontal'
 }
 
@@ -316,11 +316,12 @@ const CertificateLayout: React.FC<Props> = ({
                   <SliderBar
                     formRef={formRef}
                     name="validateHorizontalPadding"
-                    label="Margem horizontal"
+                    label="Deslocamento horizontal"
                     step="0.5"
                     marginBottom="sm"
-                    min="0"
-                    max="50"
+                    min="-15"
+                    max="15"
+                    defaultValue={0}
                     onChange={data => {
                       run({
                         ...textConfig,
@@ -359,10 +360,11 @@ const CertificateLayout: React.FC<Props> = ({
                     step="0.5"
                     formRef={formRef}
                     name="validateVerticalPadding"
-                    label="Margem vertical"
+                    label="Deslocamento vertical"
                     marginBottom="sm"
-                    min="0"
-                    max="50"
+                    min="-5"
+                    max="5"
+                    defaultValue={0}
                     onChange={data => {
                       run({
                         ...textConfig,

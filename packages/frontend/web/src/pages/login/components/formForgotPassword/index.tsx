@@ -2,7 +2,7 @@ import { Alert, Button, Card, Help, Input, Row } from '@components'
 import { useToast } from '@providers'
 import { api } from '@services'
 import { FormHandles } from '@unform/core'
-import { getValidationErrors } from '@utils'
+import { getValidationErrors, isValidEmail } from '@utils'
 import { Dispatch, SetStateAction, useCallback, useRef, useState } from 'react'
 import { FiArrowLeft, FiMail, FiSend } from 'react-icons/fi'
 import * as Yup from 'yup'
@@ -24,7 +24,7 @@ export const FormForgotPassword: React.FC<Props> = ({ setForgotPassword }) => {
         const schema = Yup.object().shape({
           email: Yup.string()
             .required('Por favor, digite o seu e-mail')
-            .email('Por favor, digite um e-mail válido')
+            .test('email-is-valid', 'Por favor, digite um e-mail válido', isValidEmail)
         })
 
         await schema.validate(data, {

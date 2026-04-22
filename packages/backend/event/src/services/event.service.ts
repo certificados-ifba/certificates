@@ -11,7 +11,7 @@ import { IEvent } from '../interfaces/event.interface'
 export class EventService {
   constructor(
     @InjectModel('Event') private readonly EventModel: Model<IEvent> // private readonly EventModel = model('', )
-  ) {}
+  ) { }
 
   public async getEventsByUserId(userId: string): Promise<IEvent[]> {
     return this.EventModel.find({ user: userId })
@@ -32,6 +32,14 @@ export class EventService {
 
   public async removeEventById(id: string): Promise<IEvent> {
     return this.EventModel.findOneAndDelete({ _id: id })
+  }
+
+  public async publishEventById(id: string): Promise<IEvent> {
+    return this.EventModel.findOneAndUpdate(
+      { _id: id },
+      { status: 'PUBLISHED' },
+      { new: true }
+    ).populate('user')
   }
 
   public async updateEventById(

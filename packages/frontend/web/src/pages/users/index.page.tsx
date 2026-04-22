@@ -16,19 +16,19 @@ import { useToast } from '@providers'
 import { api, usePaginatedRequest } from '@services'
 import { theme } from '@styles'
 import { Form } from '@unform/web'
-import { getRole } from '@utils'
+import { getRole, maskEmail } from '@utils'
 import Head from 'next/head'
 import { useCallback, useState } from 'react'
 import {
   FiEdit,
+  FiLock,
+  FiMail,
   FiPlus,
   FiSearch,
+  FiSend,
   FiTrash2,
-  FiUsers,
-  FiMail,
   FiUnlock,
-  FiLock,
-  FiSend
+  FiUsers
 } from 'react-icons/fi'
 
 import { UserModal } from './components'
@@ -50,8 +50,8 @@ const Users: React.FC = () => {
       filters && order !== ''
         ? Object.assign(filters, { sort_by: column, order_by: order })
         : order !== ''
-        ? { sort_by: column, order_by: order }
-        : filters
+          ? { sort_by: column, order_by: order }
+          : filters
   })
 
   const { addToast } = useToast()
@@ -186,7 +186,7 @@ const Users: React.FC = () => {
             {request.data?.data?.map(user => (
               <tr key={user.id}>
                 <td>{user.name}</td>
-                <td>{user.email}</td>
+                <td>{maskEmail(user.email)}</td>
                 <td>{getRole(user.role)}</td>
                 <td>
                   <TableRow>
@@ -198,10 +198,10 @@ const Users: React.FC = () => {
                     <span>
                       {user.last_login
                         ? `Acessou em ${new Date(
-                            user.last_login
-                          ).toLocaleDateString()} às ${new Date(
-                            user.last_login
-                          ).toLocaleTimeString()}`
+                          user.last_login
+                        ).toLocaleDateString()} às ${new Date(
+                          user.last_login
+                        ).toLocaleTimeString()}`
                         : 'Nunca acessou'}
                     </span>
                   </TableRow>

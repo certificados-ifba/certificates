@@ -33,31 +33,32 @@ export const ValidateContainer = styled.div<ValidateContainerProps>`
   .text {
     position: absolute;
     font-size: small;
+    white-space: nowrap;
+
     ${props =>
     props.orientation === 'horizontal' || !props.orientation
       ? css`
-            /* Horizontal: fica na borda top/bottom, margem controla esquerda/direita */
-            ${props.verticalPosition === 'top' && 'top: 0;'}
-            ${props.verticalPosition === 'bottom' && 'bottom: 0;'}
-            left: ${props.horizontalPadding}%;
-            white-space: nowrap;
-          `
+              ${props.verticalPosition === 'top' && 'top: 0;'}
+              ${props.verticalPosition === 'bottom' && 'bottom: 0;'}
+              left: calc(50% + ${props.horizontalPadding}%);
+              transform: translateX(-50%);
+            `
       : css`
-            /* Vertical: fica na borda left/right, margem controla cima/baixo */
-            white-space: nowrap;
-            top: ${props.verticalPadding}%;
-            ${props.horizontalPosition === 'left'
-          ? 'left: 0; transform: rotate(-90deg) translateX(-100%); transform-origin: 0 0;'
-          : 'right: 0; transform: rotate(90deg) translateX(100%); transform-origin: 100% 0;'}
-          `}
+              writing-mode: vertical-rl;
+              top: calc(50% + ${props.verticalPadding}%);
+              transform: translateY(-50%);
+              ${props.horizontalPosition === 'left' ? 'left: 0;' : 'right: 0;'}
+            `}
+
     ${props =>
     props.displayGuide &&
     css`
-        z-index: 3;
-        background-color: rgba(0, 0, 0, 0.3);
-        padding: 2px 5px;
-      `}
+          z-index: 3;
+          background-color: rgba(0, 0, 0, 0.3);
+          padding: 2px 5px;
+        `}
   }
+
   ${props =>
     props.displayGuide &&
     css`

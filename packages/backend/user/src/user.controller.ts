@@ -49,7 +49,7 @@ export class UserController {
           const defaultDate = new Date('2017-12-23T00:00:00.000Z')
           const userDobTime = user.personal_data.dob ? new Date(user.personal_data.dob).getTime() : null
           const isDefaultDate = userDobTime === defaultDate.getTime()
-          
+
           // Se o usuário não tem data de nascimento cadastrada ou tem a data padrão, atualiza com a fornecida
           if (!user.personal_data.dob || isDefaultDate) {
             const userUpdated = await this.userService.updateUserById(user.id, {
@@ -361,8 +361,14 @@ export class UserController {
       } else {
         userLink = await this.userService.getUserLinkByUser(user.id)
         if (!userLink) {
-          userLink = await this.userService.createUserLink(user.id)
+          userLink = await this.userService.createUserLink(
+            user.id,
+            user.role === 'PARTICIPANT' ? Date.now() + 48 * 60 * 60 * 1000 : undefined
+          )
         }
+        const confirmLink = user.role === 'PARTICIPANT'
+          ? this.userService.getParticipantConfirmationLink(userLink.link)
+          : this.userService.getConfirmationLink(userLink.link)
         this.mailerServiceClient
           .send('mail_send', {
             to: user.email,
@@ -371,7 +377,7 @@ export class UserController {
             context: {
               name: user.name,
               email: user.email,
-              link: this.userService.getConfirmationLink(userLink.link),
+              link: confirmLink,
               site: this.userService.getWebUrl()
             }
           })
@@ -438,6 +444,7 @@ export class UserController {
                 }
               }
             }
+            userParams.is_confirmed = false
           }
 
           const createdUser = await this.userService.createUser(userParams)
@@ -461,6 +468,24 @@ export class UserController {
                   name: createdUser.name,
                   email: createdUser.email,
                   link: this.userService.getConfirmationLink(userLink.link),
+                  site: this.userService.getWebUrl()
+                }
+              })
+              .toPromise()
+          } else if (createdUser.email) {
+            const userLink = await this.userService.createUserLink(
+              createdUser.id,
+              Date.now() + 48 * 60 * 60 * 1000
+            )
+            this.mailerServiceClient
+              .send('mail_send', {
+                to: createdUser.email,
+                subject: 'E-mail de Confirmação',
+                template: '/templates/confirm_email',
+                context: {
+                  name: createdUser.name,
+                  email: createdUser.email,
+                  link: this.userService.getParticipantConfirmationLink(userLink.link),
                   site: this.userService.getWebUrl()
                 }
               })
@@ -497,8 +522,23 @@ export class UserController {
       try {
         const user = await this.userService.searchUserById(params.id)
         if (user) {
-          if (user.personal_data.cpf)
-            params.user.personal_data.cpf = user.personal_data.cpf
+          const newCpf = params.user?.personal_data?.cpf
+          if (newCpf && newCpf !== user.personal_data?.cpf) {
+            const usersWithCPF = await this.userService.searchUserByCpf(newCpf)
+            if (usersWithCPF) {
+              return {
+                status: HttpStatus.CONFLICT,
+                message: 'user_update_by_id_conflict',
+                user: null,
+                errors: {
+                  cpf: {
+                    message: 'CPF already registered',
+                    path: 'cpf'
+                  }
+                }
+              }
+            }
+          }
 
           const updatedUser = Object.assign(user, params.user)
 
@@ -519,25 +559,35 @@ export class UserController {
                 }
               }
             }
+            if (user.role === 'PARTICIPANT') {
+              updatedUser.is_confirmed = false
+            }
           }
           await this.userService.updateUserById(updatedUser.id, updatedUser)
-          // await updatedUser.save()
-          // if (params.user.role !== 'PARTICIPANT') {
-          //   const userLink = await this.userService.createUserLink(user.id)
-          //   this.mailerServiceClient
-          //     .send('mail_send', {
-          //       to: user.email,
-          //       subject: 'E-mail de Confirmação',
-          //       template: '/templates/confirm_email',
-          //       context: {
-          //         name: user.name,
-          //         email: user.email,
-          //         link: this.userService.getConfirmationLink(userLink.link),
-          //         site: this.userService.getWebUrl()
-          //       }
-          //     })
-          //     .toPromise()
-          // }
+          if (
+            params.user.email &&
+            params.user.email !== user.email &&
+            user.role === 'PARTICIPANT' &&
+            updatedUser.email
+          ) {
+            const userLink = await this.userService.createUserLink(
+              updatedUser.id,
+              Date.now() + 48 * 60 * 60 * 1000
+            )
+            this.mailerServiceClient
+              .send('mail_send', {
+                to: updatedUser.email,
+                subject: 'Confirme seu novo e-mail',
+                template: '/templates/confirm_email',
+                context: {
+                  name: updatedUser.name,
+                  email: updatedUser.email,
+                  link: this.userService.getParticipantConfirmationLink(userLink.link),
+                  site: this.userService.getWebUrl()
+                }
+              })
+              .toPromise()
+          }
           result = {
             status: HttpStatus.OK,
             message: 'user_update_by_id_success',
@@ -628,6 +678,93 @@ export class UserController {
       status: HttpStatus.OK,
       message: 'get_participant_registered_success',
       data: quantity
+    }
+  }
+
+  @MessagePattern('participant_confirm')
+  public async confirmParticipant(link: string): Promise<IUserConfirmResponse> {
+    let result: IUserConfirmResponse
+
+    if (link) {
+      const userLink = await this.userService.getUserLink(link)
+      if (userLink) {
+        const user = await this.userService.updateUserById(userLink.user, {
+          is_confirmed: true
+        })
+        await this.userService.updateUserLinkById(userLink.id, {
+          is_used: true
+        })
+        result = {
+          status: HttpStatus.OK,
+          message: 'participant_confirm_success',
+          user,
+          errors: null
+        }
+      } else {
+        result = {
+          status: HttpStatus.NOT_FOUND,
+          message: 'participant_confirm_not_found',
+          user: null,
+          errors: null
+        }
+      }
+    } else {
+      result = {
+        status: HttpStatus.BAD_REQUEST,
+        message: 'participant_confirm_bad_request',
+        user: null,
+        errors: null
+      }
+    }
+
+    return result
+  }
+
+  @MessagePattern('user_verify_password')
+  public async userVerifyPassword(params: {
+    id: string
+    password: string
+  }): Promise<{ status: number; message: string; errors: any }> {
+    if (!params?.id || !params?.password) {
+      return {
+        status: HttpStatus.BAD_REQUEST,
+        message: 'user_verify_password_bad_request',
+        errors: null
+      }
+    }
+
+    try {
+      const user = await this.userService.searchUserById(params.id)
+
+      if (!user) {
+        return {
+          status: HttpStatus.NOT_FOUND,
+          message: 'user_verify_password_not_found',
+          errors: null
+        }
+      }
+
+      const isMatch = user.compareEncryptedPassword(params.password)
+
+      if (!isMatch) {
+        return {
+          status: HttpStatus.UNAUTHORIZED,
+          message: 'user_verify_password_invalid',
+          errors: { password: { message: 'Senha incorreta', path: 'password' } }
+        }
+      }
+
+      return {
+        status: HttpStatus.OK,
+        message: 'user_verify_password_success',
+        errors: null
+      }
+    } catch (e) {
+      return {
+        status: HttpStatus.PRECONDITION_FAILED,
+        message: 'user_verify_password_precondition_failed',
+        errors: e.errors
+      }
     }
   }
 }

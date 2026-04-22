@@ -1,4 +1,4 @@
-import styled from 'styled-components'
+import styled, { css } from 'styled-components'
 
 export const Container = styled.header`
   height: 100px;
@@ -58,8 +58,53 @@ export const Avatar = styled.div`
   font-size: 24px;
   color: ${props => props.theme.colors.light};
   font-weight: 600;
+  user-select: none;
+
+  :hover {
+    filter: brightness(0.9);
+  }
 `
 export const Right = styled.div`
   display: flex;
   align-items: center;
+`
+
+export const AvatarDropdown = styled.div<{ active: boolean }>`
+  display: none;
+  position: absolute;
+  right: 0;
+  top: calc(100% + 8px);
+  background: ${props => props.theme.colors.lightTint};
+  border-radius: 10px;
+  box-shadow: 0px 0px 5px 0px ${props => props.theme.colors.mediumTint};
+  padding: ${props => props.theme.margins.sm};
+  z-index: 20;
+  min-width: 180px;
+
+  ${props =>
+    props.active &&
+    css`
+      display: block;
+    `}
+`
+
+export const AvatarMenuItem = styled.button`
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 14px;
+  border: none;
+  background: transparent;
+  border-radius: 8px;
+  color: ${props => props.theme.colors.mediumShade};
+  cursor: pointer;
+  font-size: 14px;
+  white-space: nowrap;
+  transition: all 0.2s;
+
+  :hover {
+    background: ${props => props.theme.colors.light};
+    color: ${props => props.theme.colors.primaryTint};
+  }
 `

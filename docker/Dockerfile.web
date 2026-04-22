@@ -3,8 +3,8 @@ FROM node:14-alpine
 WORKDIR /usr/src/app
 
 RUN yarn config set enableIPv6 false \
- && yarn config set networkFamily ipv4 \
- && yarn config set enable-http2 false
+    && yarn config set networkFamily ipv4 \
+    && yarn config set enable-http2 false
 
 # arquivos base
 COPY package.json yarn.lock prettier.config.js tsconfig.json .eslintrc.js .eslintignore ./
@@ -17,7 +17,6 @@ RUN yarn install --frozen-lockfile
 # copia código
 COPY packages/frontend/web ./packages/frontend/web
 
-# build do frontend
 RUN yarn workspace @certificates/web build
 
 WORKDIR /usr/src/app/packages/frontend/web
