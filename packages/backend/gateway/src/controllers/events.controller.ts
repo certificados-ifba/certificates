@@ -1,25 +1,24 @@
 import {
-  Controller,
-  Inject,
-  Get,
-  Post,
-  Put,
-  Delete,
-  Param,
   Body,
-  Req,
+  Controller,
+  Delete,
+  Get,
   HttpException,
   HttpStatus,
-  Res,
+  Inject,
+  Param,
+  Post,
+  Put,
   Query,
-  Module
+  Req,
+  Res
 } from '@nestjs/common'
 import { ClientProxy } from '@nestjs/microservices'
 import {
-  ApiTags,
-  ApiOkResponse,
+  ApiBearerAuth,
   ApiCreatedResponse,
-  ApiBearerAuth
+  ApiOkResponse,
+  ApiTags
 } from '@nestjs/swagger'
 import { Response } from 'express'
 
@@ -40,7 +39,6 @@ import { IServiceEventDeleteResponse } from '../interfaces/event/service-event-d
 import { IServiceEventGetByIdResponse } from '../interfaces/event/service-event-get-by-id-response.interface'
 import { IServiceEventListResponse } from '../interfaces/event/service-event-list-response.interface'
 import { IServiceEventUpdateByIdResponse } from '../interfaces/event/service-event-update-by-id-response.interface'
-import { ActivitiesController } from './activities.controller'
 
 @Controller('events')
 @ApiBearerAuth('JWT')

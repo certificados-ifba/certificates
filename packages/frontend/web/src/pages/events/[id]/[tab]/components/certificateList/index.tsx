@@ -1,11 +1,11 @@
 import {
-  Alert,
-  Button,
-  Column,
-  DeleteModal,
-  Input,
-  PaginatedTable,
-  TableRow
+    Alert,
+    Button,
+    Column,
+    DeleteModal,
+    Input,
+    PaginatedTable,
+    TableRow
 } from '@components'
 import { IActivity, IEvent, IGeneric, IParticipant } from '@dtos'
 import { useToast } from '@providers'
@@ -16,12 +16,12 @@ import { capitalize } from '@utils'
 import { useRouter } from 'next/router'
 import { useCallback, useRef, useState } from 'react'
 import {
-  FiDownload,
-  FiExternalLink,
-  FiFilePlus,
-  FiMinusCircle,
-  FiPlus,
-  FiSearch
+    FiDownload,
+    FiExternalLink,
+    FiFilePlus,
+    FiMinusCircle,
+    FiPlus,
+    FiSearch
 } from 'react-icons/fi'
 
 interface Props {
@@ -165,22 +165,19 @@ export const CertificateList: React.FC<Props> = ({ event, openAccordion }) => {
           {request.data?.data?.map(
             ({
               id,
-              activity: { name: activity },
-              participant: {
-                name,
-                personal_data: { cpf }
-              },
-              function: { name: _function },
+              activity,
+              participant,
+              function: certFunction,
               workload,
               start_date,
               end_date,
               created_at
             }) => (
               <tr key={id}>
-                <td>{name}</td>
-                <td>{cpf}</td>
-                <td>{activity}</td>
-                <td>{capitalize(_function)}</td>
+                <td>{participant?.name}</td>
+                <td>{participant?.personal_data?.cpf}</td>
+                <td>{activity?.name}</td>
+                <td>{capitalize(certFunction?.name || '-')}</td>
                 <td>
                   {workload} Hora{Number(workload) > 1 && 's'}
                 </td>
