@@ -138,7 +138,7 @@ const Roles: React.FC<Props> = ({ onFormChange, onRolesChange, isDefault, onDefa
             </Alert>
           </Section>
         )}
-        {!isDefault && (
+        {(!isDefault || !preview) && (
         <Section paddingTop={preview ? 'md' : undefined} paddingBottom="md">
           <Table>
             <thead>
@@ -173,16 +173,18 @@ const Roles: React.FC<Props> = ({ onFormChange, onRolesChange, isDefault, onDefa
                       />
                     </td>
                     <td>
-                      <Button
-                        inline
-                        square
-                        size="small"
-                        type="button"
-                        onClick={() => addRole()}
-                        disabled={isDefault}
-                      >
-                        <FiPlus size={20} /> <span>Adicionar</span>
-                      </Button>
+                      <span title={isDefault ? 'Modelo padrão não adiciona critérios' : undefined} style={{ display: 'inline-block' }}>
+                        <Button
+                          inline
+                          square
+                          size="small"
+                          type="button"
+                          onClick={() => addRole()}
+                          disabled={isDefault}
+                        >
+                          <FiPlus size={20} /> <span>Adicionar</span>
+                        </Button>
+                      </span>
                     </td>
                   </tr>
                 </>

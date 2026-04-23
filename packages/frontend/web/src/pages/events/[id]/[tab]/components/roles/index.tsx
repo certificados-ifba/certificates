@@ -36,7 +36,6 @@ interface Props {
   onFormChange: (formRef: MutableRefObject<FormHandles>) => void
   preview?: boolean
   roles?: ICriterion[]
-  isDefault?: boolean
   id: string
 }
 
@@ -44,13 +43,12 @@ export const Roles: React.FC<Props> = ({
   onFormChange,
   preview,
   roles,
-  isDefault,
   id
 }) => {
   const formRef = useRef<FormHandles>(null)
 
   const [defaultModel, setDefaultModel] = useState(
-    isDefault !== undefined ? isDefault : (!roles ? false : roles.length === 0)
+    !roles ? false : roles.length === 0
   )
   const [roleList, setRoleList] = useState(roles || [])
 

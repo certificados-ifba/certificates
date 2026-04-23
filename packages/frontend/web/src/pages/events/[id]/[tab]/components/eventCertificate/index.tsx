@@ -128,6 +128,7 @@ export const EventCertificate: React.FC<Props> = ({ event }) => {
             edit={!!editingModel}
             modelData={editingModel as IModelData}
             onSuccess={handleAddCertificateSuccess}
+            disableDefault={defaultModels.length > 0 && !editingModel?.is_default}
           />
         </div>
       )}

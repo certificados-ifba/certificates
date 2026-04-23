@@ -47,13 +47,15 @@ interface Props {
   edit?: boolean
   modelData?: IModelData
   onSuccess?: () => void
+  disableDefault?: boolean
 }
 
 const AddCertificate: React.FC<Props> = ({
   eventId,
   edit,
   modelData,
-  onSuccess
+  onSuccess,
+  disableDefault
 }) => {
   const formRef = useRef<FormHandles>(null)
   const layoutFrontFormRef = useRef<FormHandles>(null)
@@ -250,17 +252,24 @@ const AddCertificate: React.FC<Props> = ({
                 icon={FiFileText}
               />
             </div>
-            <div style={{ display: 'flex', alignItems: 'flex-end', paddingBottom: '0.25rem' }}>
+            <div style={{ paddingTop: '28px' }}>
               <Button
                 size="small"
-                onClick={() => setIsDefault(state => !state)}
+                onClick={() => !disableDefault && setIsDefault(state => !state)}
                 outline={!isDefault}
                 inline
                 type="button"
+                disabled={disableDefault}
+                title={disableDefault ? 'Já existe um modelo padrão cadastrado para este evento' : ''}
               >
                 {isDefault ? <FiCheckSquare size={20} /> : <FiSquare size={20} />}
                 <span>Modelo Padrão</span>
               </Button>
+              {disableDefault && (
+                <small style={{ display: 'block', color: '#c05621', fontSize: '0.75rem', marginTop: '0.25rem' }}>
+                  Já existe um modelo padrão.
+                </small>
+              )}
             </div>
           </Row>
         </Section>
