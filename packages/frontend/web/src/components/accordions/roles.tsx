@@ -138,6 +138,7 @@ const Roles: React.FC<Props> = ({ onFormChange, onRolesChange, isDefault, onDefa
             </Alert>
           </Section>
         )}
+        {!isDefault && (
         <Section paddingTop={preview ? 'md' : undefined} paddingBottom="md">
           <Table>
             <thead>
@@ -215,6 +216,7 @@ const Roles: React.FC<Props> = ({ onFormChange, onRolesChange, isDefault, onDefa
             </tbody>
           </Table>
         </Section>
+        )}
         {roleList.length === 0 && !isDefault && (
           <Section paddingBottom="md">
             <Alert type="danger" icon={FiAlertCircle}>

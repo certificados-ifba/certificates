@@ -90,6 +90,7 @@ const CertificatePreview: React.FC<Props> = ({
         <Roles
           id={certificate.id}
           roles={certificate.roles}
+          isDefault={certificate.is_default}
           onFormChange={() => {
             console.log('')
           }}

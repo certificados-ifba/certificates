@@ -58,7 +58,8 @@ function apiModelToCertificate(model: IApiModel): ICertificate {
     verse: versePage
       ? { img: versePage.image ? `${STORAGE_URL}/upload/${versePage.image}` : '', text: versePage.text }
       : undefined,
-    roles: roles.length > 0 ? roles : []
+    roles: roles.length > 0 ? roles : [],
+    is_default: model.is_default
   }
 }
 
@@ -167,11 +168,11 @@ export const EventCertificate: React.FC<Props> = ({ event }) => {
                 )}
               </div>
 
-              {/* Modelos padrão */}
+              {/* Modelo padrão */}
               {defaultModels.length > 0 && (
                 <div style={{ marginBottom: '1.5rem' }}>
                   <h4 style={{ fontSize: '0.875rem', fontWeight: 600, color: '#718096', marginBottom: '0.5rem' }}>
-                    Modelos Padrão
+                    Modelo Padrão
                   </h4>
                   <Grid firstWidth="1460px" cols={2}>
                     {defaultModels.map(model => (

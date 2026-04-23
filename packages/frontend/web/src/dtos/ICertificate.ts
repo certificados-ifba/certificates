@@ -26,6 +26,7 @@ interface ICertificate {
     activity: { name: string; id: string }
     function: { name: string; id: string }
   }>
+  is_default?: boolean
   edit?: boolean
   confirmed?: boolean
 }
