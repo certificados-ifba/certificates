@@ -60,6 +60,8 @@ const AddCertificate: React.FC<Props> = ({
   const formRef = useRef<FormHandles>(null)
   const layoutFrontFormRef = useRef<FormHandles>(null)
   const layoutVerseFormRef = useRef<FormHandles>(null)
+  const frontLayoutConfig = useRef<any>(null)
+  const verseLayoutConfig = useRef<any>(null)
   const [rolesFormRef, setRolesFormRef] = useState(null)
 
   // Extrair roles iniciais do modelData
@@ -121,8 +123,8 @@ const AddCertificate: React.FC<Props> = ({
         })
 
         // Coletar dados dos layouts
-        const frontLayoutData = layoutFrontFormRef.current?.getData() || {}
-        const verseLayoutData = isVerse ? layoutVerseFormRef.current?.getData() || {} : null
+        const frontLayoutData = frontLayoutConfig.current || layoutFrontFormRef.current?.getData() || {}
+        const verseLayoutData = isVerse ? (verseLayoutConfig.current || layoutVerseFormRef.current?.getData() || {}) : null
 
         console.log('🎨 [DEBUG] Front layout data:', frontLayoutData)
         console.log('🔄 [DEBUG] Verse layout data:', verseLayoutData)
@@ -136,6 +138,7 @@ const AddCertificate: React.FC<Props> = ({
             text: frontLayoutData.html || '<p>Texto padrão</p>',
             image: previewFront || '',
             layout: {
+              orientation: frontLayoutData.codeOrientation || 'horizontal',
               padding: {
                 top: String(frontLayoutData.paddingTop || 15),
                 right: frontLayoutData.paddingRight || 15,
@@ -161,6 +164,7 @@ const AddCertificate: React.FC<Props> = ({
             text: verseLayoutData.html || '<p>Texto padrão</p>',
             image: previewVerse || '',
             layout: {
+              orientation: verseLayoutData.codeOrientation || 'horizontal',
               padding: {
                 top: String(verseLayoutData.paddingTop || 15),
                 right: verseLayoutData.paddingRight || 15,
@@ -282,9 +286,11 @@ const AddCertificate: React.FC<Props> = ({
                 frontPage?.text ||
                 '<p>Certificamos que <strong>[participante_nome]</strong> participou da <strong>[evento_edicao] [evento_nome] ([evento_sigla])</strong> do Instituto Federal de Educação, Ciência e Tecnologia da Bahia (IFBA) Campus Vitória da Conquista, realizada no período de <strong>[participacao_periodo]</strong>, com carga horária de <strong>[participacao_carga_horaria]</strong></p>'
               }
+              layout={frontPage?.layout}
               formRef={layoutFrontFormRef}
               preview={previewFront}
               setPreview={setPreviewFront}
+              onLayoutChange={config => { frontLayoutConfig.current = config }}
             />
           </Accordion>
         </Section>
@@ -308,9 +314,11 @@ const AddCertificate: React.FC<Props> = ({
               <CertificateLayout
                 type="verso"
                 text={versePage?.text || ''}
+                layout={versePage?.layout}
                 formRef={layoutVerseFormRef}
                 preview={previewVerse}
                 setPreview={setPreviewVerse}
+                onLayoutChange={config => { verseLayoutConfig.current = config }}
               />
             )}
           </Accordion>

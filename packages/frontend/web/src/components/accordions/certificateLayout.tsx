@@ -3,6 +3,7 @@ import { Form } from '@unform/web'
 import {
   MutableRefObject,
   useCallback,
+  useEffect,
   useRef,
   useState
 } from 'react'
@@ -53,17 +54,21 @@ export const initialTextConfig = {
 interface Props {
   type: 'frente' | 'verso'
   text: string
+  layout?: any
   formRef?: MutableRefObject<FormHandles>
   preview?: string
   setPreview?: (value: string) => void
+  onLayoutChange?: (config: any) => void
 }
 
 const CertificateLayout: React.FC<Props> = ({
   type,
   text,
+  layout: savedLayout,
   formRef: externalFormRef,
   preview: externalPreview,
-  setPreview: externalSetPreview
+  setPreview: externalSetPreview,
+  onLayoutChange
 }) => {
   const internalFormRef = useRef<FormHandles>(null)
   const formRef = externalFormRef || internalFormRef
@@ -71,9 +76,25 @@ const CertificateLayout: React.FC<Props> = ({
   const [internalPreview, setInternalPreview] = useState('')
   const preview = externalPreview !== undefined ? externalPreview : internalPreview
   const setPreview = externalSetPreview || setInternalPreview
+  const layoutInitial = savedLayout
+    ? {
+        position: savedLayout.padding ? 'custom' : initialTextConfig.position,
+        padding: initialTextConfig.padding,
+        paddingTop: Number(savedLayout.padding?.top) || initialTextConfig.paddingTop,
+        paddingBottom: Number(savedLayout.padding?.bottom) || initialTextConfig.paddingBottom,
+        paddingLeft: Number(savedLayout.padding?.left) || initialTextConfig.paddingLeft,
+        paddingRight: Number(savedLayout.padding?.right) || initialTextConfig.paddingRight,
+        codeOrientation: savedLayout.orientation || initialTextConfig.codeOrientation,
+        validateVerticalPosition: savedLayout.vertical?.name || initialTextConfig.validateVerticalPosition,
+        validateHorizontalPosition: savedLayout.horizontal?.name || initialTextConfig.validateHorizontalPosition,
+        validateHorizontalPadding: Number(savedLayout.horizontal?.value) || initialTextConfig.validateHorizontalPadding,
+        validateVerticalPadding: Number(savedLayout.vertical?.value) || initialTextConfig.validateVerticalPadding
+      }
+    : initialTextConfig
+
   const [textConfig, setTextConfig] = useState<any>({
     html: text,
-    ...initialTextConfig
+    ...layoutInitial
   })
 
   const [displayTextGuide, setDisplayTextGuide] = useState(false)
@@ -82,17 +103,29 @@ const CertificateLayout: React.FC<Props> = ({
   const [dropdownValidateActive, setDropdownValidateActive] = useState(false)
   const [stateRichText, setStateRichText] = useState(null)
 
+  // Notifica o pai com a config inicial ao montar o componente
+  useEffect(() => {
+    if (onLayoutChange) onLayoutChange(textConfig)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   const { run } = useDebounce<any>(config => {
     onConfigChange(config)
   })
 
-  const onConfigChange = useCallback(config => {
-    setTextConfig({ ...config })
-    // Atualizar o formulário com o novo HTML
-    if (formRef.current) {
+  const syncFormFields = useCallback((config: any) => {
+    if (!formRef.current) return
+    // Apenas sincroniza o campo html (campos Select já se auto-registram no unform)
+    if (config.html !== undefined) {
       formRef.current.setFieldValue('html', config.html)
     }
   }, [formRef])
+
+  const onConfigChange = useCallback(config => {
+    setTextConfig({ ...config })
+    syncFormFields(config)
+    if (onLayoutChange) onLayoutChange(config)
+  }, [formRef, syncFormFields, onLayoutChange])
 
   const [openModal, setOpenModal] = useState(false)
 
@@ -114,7 +147,7 @@ const CertificateLayout: React.FC<Props> = ({
 
   return (
     <Form
-      initialData={{ html: text, ...initialTextConfig }}
+      initialData={{ html: text, ...layoutInitial }}
       ref={formRef}
       onSubmit={() => {
         console.log()
@@ -154,7 +187,7 @@ const CertificateLayout: React.FC<Props> = ({
                         ...initialTextPadding
                       })
                     }}
-                    initialValue="center"
+                    initialValue={layoutInitial.position}
                     label="Posição"
                     name="position"
                     options={[
@@ -266,12 +299,11 @@ const CertificateLayout: React.FC<Props> = ({
                 <Select
                   formRef={formRef}
                   handleOnSelect={data => {
-                    setTextConfig({
-                      ...textConfig,
-                      codeOrientation: data.value
-                    })
+                    const updated = { ...textConfig, codeOrientation: data.value }
+                    setTextConfig(updated)
+                    if (onLayoutChange) onLayoutChange(updated)
                   }}
-                  initialValue="horizontal"
+                  initialValue={layoutInitial.codeOrientation}
                   label="Orientação do código"
                   name="codeOrientation"
                   options={[
@@ -291,10 +323,9 @@ const CertificateLayout: React.FC<Props> = ({
                   <Select
                     formRef={formRef}
                     handleOnSelect={data => {
-                      setTextConfig({
-                        ...textConfig,
-                        validateVerticalPosition: data.value
-                      })
+                      const updated = { ...textConfig, validateVerticalPosition: data.value }
+                      setTextConfig(updated)
+                      if (onLayoutChange) onLayoutChange(updated)
                     }}
                     label="Posição vertical"
                     name="validateVerticalPosition"
@@ -334,10 +365,9 @@ const CertificateLayout: React.FC<Props> = ({
                   <Select
                     formRef={formRef}
                     handleOnSelect={data => {
-                      setTextConfig({
-                        ...textConfig,
-                        validateHorizontalPosition: data.value
-                      })
+                      const updated = { ...textConfig, validateHorizontalPosition: data.value }
+                      setTextConfig(updated)
+                      if (onLayoutChange) onLayoutChange(updated)
                     }}
                     label="Posição horizontal"
                     name="validateHorizontalPosition"

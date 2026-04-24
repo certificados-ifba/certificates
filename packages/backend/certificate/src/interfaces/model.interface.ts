@@ -1,6 +1,7 @@
 import { Document, Types } from 'mongoose'
 
 interface ILayout {
+  orientation?: string
   padding: string
   horizontal_padding: number
   vertical_padding: number

@@ -93,7 +93,7 @@ const layoutToConfig = (layout: any) => {
     paddingBottom: Number(pad.bottom) || initialTextConfig.paddingBottom,
     paddingLeft: Number(pad.left) || initialTextConfig.paddingLeft,
     paddingRight: Number(pad.right) || initialTextConfig.paddingRight,
-    codeOrientation: initialTextConfig.codeOrientation,
+    codeOrientation: layout.orientation || initialTextConfig.codeOrientation,
     validateVerticalPosition: layout.vertical?.name || initialTextConfig.validateVerticalPosition,
     validateHorizontalPosition: layout.horizontal?.name || initialTextConfig.validateHorizontalPosition,
     validateHorizontalPadding: Number(layout.horizontal?.value) || initialTextConfig.validateHorizontalPadding,
@@ -247,6 +247,7 @@ export const EventCertificate: React.FC<Props> = ({ event }) => {
                 validateVerticalPosition={cfg.validateVerticalPosition as 'bottom' | 'top'}
                 validateHorizontalPadding={cfg.validateHorizontalPadding}
                 validateVerticalPadding={cfg.validateVerticalPadding}
+                codeOrientation={cfg.codeOrientation as 'horizontal' | 'vertical'}
                 padding={cfg.padding}
                 position={cfg.position as 'center' | 'custom'}
                 html={substituteParams(certificateSelected.front.text, event, firstParticipantName)}
