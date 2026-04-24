@@ -73,7 +73,39 @@ const Publish: React.FC = () => {
   const publish = useCallback(async () => {
     setLoading(true)
     try {
-      const response = await api.post(`events/${id}/publish`, {})
+      // Validação: buscar modelos antes de publicar
+      const modelsResponse = await api.get(`events/${id}/models`)
+      const models: Array<{ is_default: boolean; criterions: any[] }> =
+        modelsResponse?.data?.data || []
+
+      const hasDefaultModel = models.some(m => m.is_default)
+      if (!hasDefaultModel) {
+        addToast({
+          type: 'error',
+          title: 'Modelo padrão ausente',
+          description:
+            'É necessário ter pelo menos um modelo de certificado marcado como padrão para publicar o evento.'
+        })
+        setLoading(false)
+        return false
+      }
+
+      const regularModels = models.filter(m => !m.is_default)
+      const regularWithoutCriterion = regularModels.filter(
+        m => !m.criterions || m.criterions.length === 0
+      )
+      if (regularWithoutCriterion.length > 0) {
+        addToast({
+          type: 'error',
+          title: 'Critérios ausentes',
+          description:
+            'Todos os modelos comuns (não padrão) precisam ter pelo menos um critério cadastrado antes de publicar o evento.'
+        })
+        setLoading(false)
+        return false
+      }
+
+      await api.post(`events/${id}/publish`, {})
       setLoading(false)
       return true
     } catch (err) {
