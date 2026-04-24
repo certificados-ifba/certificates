@@ -70,32 +70,30 @@ const substituteParams = (html: string, event: any, participantName = 'Fulano de
 }
 
 /**
- * Converte o objeto `layout` salvo no banco (estrutura do formulário)
- * para os props que o componente Certificate espera.
+ * Converte o objeto `layout` salvo no banco para os props do Certificate.
  *
- * Estrutura do banco:
- *   layout.padding          → número (position='center') OU { top, bottom, left, right } (position='custom')
- *   layout.orientation      → codeOrientation
- *   layout.vertical.name    → validateVerticalPosition  (quando orientation='horizontal')
- *   layout.horizontal.value → validateHorizontalPadding (quando orientation='horizontal')
- *   layout.horizontal.name  → validateHorizontalPosition (quando orientation='vertical')
- *   layout.vertical.value   → validateVerticalPadding   (quando orientation='vertical')
+ * Estrutura real salva:
+ *   layout.padding.{top, right, bottom, left}
+ *   layout.vertical.name  → validateVerticalPosition
+ *   layout.vertical.value → validateVerticalPadding
+ *   layout.horizontal.name  → validateHorizontalPosition
+ *   layout.horizontal.value → validateHorizontalPadding
+ *
+ * Nota: `position` e `orientation` não são salvos no banco.
+ * Usamos sempre position='custom' com os lados individuais.
  */
 const layoutToConfig = (layout: any) => {
   if (!layout) return initialTextConfig
 
-  const isCustom = layout.padding !== null &&
-    typeof layout.padding === 'object' &&
-    !Array.isArray(layout.padding)
-
+  const pad = layout.padding || {}
   return {
-    position: isCustom ? 'custom' : 'center',
-    padding: isCustom ? initialTextConfig.padding : (Number(layout.padding) || initialTextConfig.padding),
-    paddingTop: isCustom ? (Number(layout.padding?.top) || 0) : initialTextConfig.paddingTop,
-    paddingBottom: isCustom ? (Number(layout.padding?.bottom) || 0) : initialTextConfig.paddingBottom,
-    paddingLeft: isCustom ? (Number(layout.padding?.left) || 0) : initialTextConfig.paddingLeft,
-    paddingRight: isCustom ? (Number(layout.padding?.right) || 0) : initialTextConfig.paddingRight,
-    codeOrientation: layout.orientation || initialTextConfig.codeOrientation,
+    position: 'custom' as const,
+    padding: initialTextConfig.padding,
+    paddingTop: Number(pad.top) || initialTextConfig.paddingTop,
+    paddingBottom: Number(pad.bottom) || initialTextConfig.paddingBottom,
+    paddingLeft: Number(pad.left) || initialTextConfig.paddingLeft,
+    paddingRight: Number(pad.right) || initialTextConfig.paddingRight,
+    codeOrientation: initialTextConfig.codeOrientation,
     validateVerticalPosition: layout.vertical?.name || initialTextConfig.validateVerticalPosition,
     validateHorizontalPosition: layout.horizontal?.name || initialTextConfig.validateHorizontalPosition,
     validateHorizontalPadding: Number(layout.horizontal?.value) || initialTextConfig.validateHorizontalPadding,
