@@ -28,10 +28,18 @@ export function usePaginatedRequest<Data = any, Error = any>(
     label: request?.params?.per_page || '10'
   })
 
-  const { response, requestKey, ...rest } = useRequest<any, Error>({
-    ...request,
-    params: { page, per_page: perPage.value, ...request.params }
-  })
+  const { response, requestKey, ...rest } = useRequest<any, Error>(
+    request
+      ? {
+          ...request,
+          params: {
+            page,
+            per_page: perPage.value,
+            ...(request.params || {})
+          }
+        }
+      : null
+  )
 
   const hasPreviousPage = useMemo(() => page > 1, [page])
   const hasNextPage = useMemo(() => page < response?.headers['x-total-page'], [

@@ -132,23 +132,26 @@ export const CertificateList: React.FC<Props> = ({ event, openAccordion }) => {
             name="search"
             placeholder={`Buscar participante no evento`}
             icon={FiSearch}
+            onChange={() => searchFormRef.current?.submitForm()}
           />
         </Form>
-        <Button size="small" inline onClick={openAccordion}>
+        {/* <Button size="small" inline onClick={openAccordion}>
           <FiPlus size={20} />
           <span>Adicionar Atividade</span>
-        </Button>
-        <Button
-          inline
-          color="info"
-          size="small"
-          onClick={() => {
-            router.push(`/import/events/certificates/${event?.id}`)
-          }}
-        >
-          <FiFilePlus size={20} />
-          <span>Importar via Planilha</span>
-        </Button>
+        </Button> */}
+        {event?.status !== 'PUBLISHED' && (
+          <Button
+            inline
+            color="info"
+            size="small"
+            onClick={() => {
+              router.push(`/events/${event?.id}/certificates/import`)
+            }}
+          >
+            <FiFilePlus size={20} />
+            <span>Importar via Planilha</span>
+          </Button>
+        )}
       </header>
       <PaginatedTable request={request}>
         <thead>
@@ -169,25 +172,29 @@ export const CertificateList: React.FC<Props> = ({ event, openAccordion }) => {
           </tr>
         </thead>
         <tbody>
-          {request.data?.data?.map(
-            ({
+          {request.data?.data?.map(cert => {
+            const {
               id,
-              activity: { name: activity },
-              participant: {
-                name,
-                personal_data: { cpf }
-              },
-              function: { name: _function },
+              activity = { name: '' },
+              participant = null,
+              function: fn = { name: '' },
               workload,
               start_date,
               end_date,
               created_at
-            }) => (
+            } = cert as any
+
+            const activityName = activity?.name || ''
+            const participantName = participant?.name || ''
+            const cpf = participant?.personal_data?.cpf || ''
+            const functionName = fn?.name || ''
+
+            return (
               <tr key={id}>
-                <td>{name}</td>
+                <td>{participantName}</td>
                 <td>{maskCpf(cpf)}</td>
-                <td>{activity}</td>
-                <td>{capitalize(_function)}</td>
+                <td>{activityName}</td>
+                <td>{capitalize(functionName)}</td>
                 <td>
                   {workload} Hora{Number(workload) > 1 && 's'}
                 </td>
@@ -241,7 +248,7 @@ export const CertificateList: React.FC<Props> = ({ event, openAccordion }) => {
                 </td>
               </tr>
             )
-          )}
+          })}
         </tbody>
       </PaginatedTable>
       <DeleteModal

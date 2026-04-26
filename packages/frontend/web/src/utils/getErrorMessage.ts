@@ -26,6 +26,12 @@ export const getErrorMessage = (
     case 'user_forgot_password_not_found':
       message = 'E-mail não encontrado, favor informar um e-mail cadastrado.'
       break
+    case 'user_get_by_cpf_not_found':
+      message = 'CPF válido, porém o participante não está cadastrado.'
+      break
+    case 'user_get_by_cpf_bad_request':
+      message = 'CPF inválido. Revise o valor informado na planilha.'
+      break
     case 'generic_create_conflict_name':
     case 'generic_update_by_id_conflict_name':
       message = 'Este nome já está cadastrado, tente com um diferente.'
@@ -37,8 +43,18 @@ export const getErrorMessage = (
     case 'activity_create_conflict':
       message = 'Atividade já cadastrada, tente com o nome ou tipo diferente.'
       break
+    case 'certificate_create_participant_not_found':
+      message = 'Participante não cadastrado'
+      break
     default:
-      message = 'Erro desconhecido, favor entrar em contato com o adminstrador.'
+      message =
+        error && /\s/.test(error)
+          ? error
+          : typeof errors === 'string'
+          ? errors
+          : errors?.message && /\s/.test(String(errors.message))
+          ? String(errors.message)
+          : 'Erro desconhecido, favor entrar em contato com o administrador.'
       break
   }
   return message

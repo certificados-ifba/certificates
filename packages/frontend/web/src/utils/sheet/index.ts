@@ -1,5 +1,6 @@
 import { api } from '@services'
 import { getValidationErrors, IErrors } from '@utils'
+import { getErrorMessage } from '@utils/getErrorMessage'
 import { formatCpf, formatDate, formatPhone } from '@utils/formatters'
 import { CellValue, Row, Workbook } from 'exceljs'
 import { SetStateAction } from 'react'
@@ -20,6 +21,20 @@ import {
 import { DataError } from './error'
 import { IData, IStatus, IWorksheet, ReturnData, IFormula } from './interfaces'
 export type { IData as IDataSheet, IStatus, ReturnData, IWorksheet, IFormula }
+
+export const downloadInconsistencies = async (
+  registers: ReturnData[],
+  dataSheet: IData[],
+  filename: string
+): Promise<void> => {
+  const errors = registers.filter(r => r.status === 'error')
+  const workbook = await createSheet(dataSheet)
+  const worksheet = workbook.getWorksheet(SHEET_NAME)
+  errors.forEach(({ data }) => {
+    worksheet.addRow(dataSheet.map(({ column }) => data[column.key]))
+  })
+  await downloadSheet(workbook, filename)
+}
 
 export { SHEET_NAME, QTD_ROWS }
 
@@ -248,7 +263,9 @@ export const getData = (
           if (err instanceof DataError) return err.data
         })
     )
-  return Promise.all(promises)
+  return Promise.all(promises).then(results =>
+    results.filter((r): r is ReturnData => r !== undefined)
+  )
 }
 
 export const sendData = (
@@ -256,6 +273,12 @@ export const sendData = (
   url: string,
   changeStatus: (status: SetStateAction<IStatus>) => void
 ): Promise<ReturnData[]> => {
+  const parseRequestErrorMessage = (error: any): string => {
+    const code = error?.response?.data?.message || error?.message
+    const details = error?.response?.data?.errors
+    return getErrorMessage(code, details)
+  }
+
   const total = registers.length
   const promises = registers.map(async (register, current) => {
     const { status, data } = register
@@ -278,7 +301,7 @@ export const sendData = (
     } catch (err) {
       changeStatus(({ errors, ...rest }) => ({ ...rest, errors: errors + 1 }))
       register.status = 'error'
-      register.message = err
+      register.message = parseRequestErrorMessage(err)
     }
     return register
   })

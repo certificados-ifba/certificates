@@ -6,6 +6,7 @@ import { ICertificateListParams } from '../interfaces/certificate-list-params.in
 import { DataResponse } from '../interfaces/certificate-list-response.interface'
 import { ICertificate } from '../interfaces/certificate.interface'
 import { IGeneric } from '../interfaces/generic.interface'
+import { IParticipant } from '../interfaces/participant.interface'
 
 @Injectable()
 export class CertificateService {
@@ -13,12 +14,39 @@ export class CertificateService {
     @InjectModel('Certificate')
     private readonly CertificateModel: Model<ICertificate>,
     @InjectModel('Generic')
-    private readonly GenericModel: Model<IGeneric>
+    private readonly GenericModel: Model<IGeneric>,
+    @InjectModel('User')
+    private readonly UserModel: Model<IParticipant>
   ) {}
 
   public async createCertificate(
     certificateBody: ICertificate
   ): Promise<ICertificate> {
+    const duplicateCertificate = await this.CertificateModel.findOne({
+      participant: certificateBody.participant,
+      event: certificateBody.event,
+      activity: certificateBody.activity,
+      function: certificateBody.function
+    })
+
+    if (duplicateCertificate) {
+      throw new Error(
+        'Já existe um certificado para este participante nesta atividade com esta função'
+      )
+    }
+    const existingCertificateInActivity = await this.CertificateModel.findOne({
+      participant: certificateBody.participant,
+      event: certificateBody.event,
+      activity: certificateBody.activity,
+      function: { $ne: certificateBody.function }
+    })
+
+    if (existingCertificateInActivity) {
+      throw new Error(
+        'O participante já possui outra função cadastrada nesta atividade'
+      )
+    }
+
     const CertificateModel = new this.CertificateModel(certificateBody)
     return await CertificateModel.save()
   }
@@ -42,19 +70,48 @@ export class CertificateService {
   public async listCertificates({
     user,
     event,
-    page,
-    perPage,
+    name,
+    page = 1,
+    perPage = 10,
     sortBy = 'created_at',
     orderBy = 'ASC'
   }: ICertificateListParams): Promise<DataResponse> {
-    const query: any = {}
+    const matchStage: any = {}
 
-    if (event) query.event = new Types.ObjectId(event)
-    if (user) query.participant = new Types.ObjectId(user)
+    if (event) matchStage.event = new Types.ObjectId(event)
+    if (user) matchStage.participant = new Types.ObjectId(user)
+    if (name) {
+      const formattedSearch = String(name).trim()
+      const cpfSearch = formattedSearch.replace(/\D/g, '')
+      const participants = await this.UserModel.find({
+        $or: [
+          { name: { $regex: formattedSearch, $options: 'i' } },
+          ...(cpfSearch
+            ? [{ 'personal_data.cpf': { $regex: cpfSearch, $options: 'i' } }]
+            : [])
+        ]
+      })
+        .select('_id')
+        .lean()
+      const participantIds = participants.map(({ _id }) => new Types.ObjectId(_id))
+
+      if (matchStage.participant) {
+        const fixedParticipant = matchStage.participant
+        matchStage.participant = {
+          $in: participantIds.filter(
+            participantId => String(participantId) === String(fixedParticipant)
+          )
+        }
+      } else {
+        matchStage.participant = {
+          $in: participantIds
+        }
+      }
+    }
 
     const sort = JSON.parse(`{"${sortBy}":"${orderBy}"}`)
 
-    const certificates = await this.CertificateModel.find(query)
+    const certificates = await this.CertificateModel.find(matchStage)
       .populate('function')
       .populate('activity')
       .populate(user ? 'event' : 'participant')
@@ -63,7 +120,7 @@ export class CertificateService {
       .sort(sort)
       .exec()
 
-    const count = await this.CertificateModel.countDocuments(query)
+    const count = await this.CertificateModel.countDocuments(matchStage)
 
     return {
       certificates,

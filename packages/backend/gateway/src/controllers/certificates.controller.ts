@@ -43,6 +43,7 @@ import { IServiceCertificateValidateResponse } from '../interfaces/certificate/s
 // import { IServiceCertificateListResponse } from '../interfaces/certificate/service-certificate-list-response.interface'
 import { IAuthorizedRequest } from '../interfaces/common/authorized-request.interface'
 import { IServiceEventGetByIdResponse } from '../interfaces/event/service-event-get-by-id-response.interface'
+import { IServiceParticipantGetByIdResponse } from '../interfaces/participant/service-participant-get-by-id-response.interface'
 // import capitalize from '../utils/capitalize'
 
 @Controller('')
@@ -53,7 +54,9 @@ export class CertificatesController {
     @Inject('CERTIFICATE_SERVICE')
     private readonly certificateServiceClient: ClientProxy,
     @Inject('EVENT_SERVICE')
-    private readonly eventServiceClient: ClientProxy
+    private readonly eventServiceClient: ClientProxy,
+    @Inject('USER_SERVICE')
+    private readonly userServiceClient: ClientProxy
   ) {}
 
   @Get('certificates/validate/:key')
@@ -160,8 +163,40 @@ export class CertificatesController {
       end_date,
       authorship_order,
       additional_field,
-      participant
+      participant,
+      cpf
     } = certificateRequest
+
+    let participantId = participant
+    if (!participantId && cpf) {
+      const cleanCpf = cpf.replace(/[^\d]+/g, '')
+      const userResponse: IServiceParticipantGetByIdResponse = await this.userServiceClient
+        .send('user_get_by_cpf', cleanCpf)
+        .toPromise()
+
+      if (userResponse.status !== HttpStatus.OK) {
+        throw new HttpException(
+          {
+            message: 'CPF válido, porém o participante não está cadastrado',
+            data: null,
+            errors: null
+          },
+          HttpStatus.NOT_FOUND
+        )
+      }
+      participantId = userResponse.data.user.id
+    }
+
+    if (!participantId) {
+      throw new HttpException(
+        {
+          message: 'É necessário informar o participante ou o CPF',
+          data: null,
+          errors: null
+        },
+        HttpStatus.BAD_REQUEST
+      )
+    }
 
     const eventResponse: IServiceEventGetByIdResponse = await this.eventServiceClient
       .send('event_get_by_id', {
@@ -185,7 +220,7 @@ export class CertificatesController {
       .send('certificate_create', {
         activity,
         function: _function,
-        participant,
+        participant: participantId,
         event: eventResponse.data.event.id,
         workload,
         start_date,

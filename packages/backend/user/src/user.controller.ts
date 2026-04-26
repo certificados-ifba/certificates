@@ -202,6 +202,37 @@ export class UserController {
     return result
   }
 
+  @MessagePattern('user_get_by_cpf')
+  public async getUserByCpf(cpf: string): Promise<IUserSearchResponse> {
+    let result: IUserSearchResponse
+
+    if (cpf) {
+      const cleanCpf = cpf.replace(/[^\d]+/g, '')
+      const user = await this.userService.searchUserByCpf(cleanCpf)
+      if (user) {
+        result = {
+          status: HttpStatus.OK,
+          message: 'user_get_by_cpf_success',
+          data: { user }
+        }
+      } else {
+        result = {
+          status: HttpStatus.NOT_FOUND,
+          message: 'user_get_by_cpf_not_found',
+          data: null
+        }
+      }
+    } else {
+      result = {
+        status: HttpStatus.BAD_REQUEST,
+        message: 'user_get_by_cpf_bad_request',
+        data: null
+      }
+    }
+
+    return result
+  }
+
   @MessagePattern('user_get_by_link')
   public async getUserByLink(link: string): Promise<IUserGetByLinkResponse> {
     let result: IUserGetByLinkResponse
