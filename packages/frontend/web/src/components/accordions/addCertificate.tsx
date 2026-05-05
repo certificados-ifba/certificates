@@ -122,6 +122,30 @@ const AddCertificate: React.FC<Props> = ({
           abortEarly: false
         })
 
+        // Validação: modelos não-padrão precisam ter ao menos um critério
+        if (!isDefault && collectedRoles.length === 0) {
+          addToast({
+            type: 'error',
+            title: 'Critérios ausentes',
+            description:
+              'Modelos não-padrão precisam ter pelo menos um critério (função + tipo de atividade) cadastrado.'
+          })
+          setLoading(false)
+          return
+        }
+
+        // Validação: o evento precisa ter ao menos um modelo padrão
+        if (!isDefault && !disableDefault) {
+          addToast({
+            type: 'error',
+            title: 'Modelo padrão ausente',
+            description:
+              'É necessário ter pelo menos um modelo de certificado marcado como padrão. Marque este modelo como padrão ou crie outro como padrão primeiro.'
+          })
+          setLoading(false)
+          return
+        }
+
         // Coletar dados dos layouts
         const frontLayoutData = frontLayoutConfig.current || layoutFrontFormRef.current?.getData() || {}
         const verseLayoutData = isVerse ? (verseLayoutConfig.current || layoutVerseFormRef.current?.getData() || {}) : null
