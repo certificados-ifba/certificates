@@ -182,14 +182,7 @@ export const ImportStep: React.FC<Props> = ({
     setIsDownloadingInconsistencies(false)
   }
 
-  const getCell = (value: string | boolean, col: string, errors: string[]) => {
-    if (errors?.find(error => error === col))
-      return (
-        <TableRow>
-          <FiAlertCircle color={theme.colors.danger} />
-          <small>{value}</small>
-        </TableRow>
-      )
+  const getCell = (value: string | boolean) => {
     if (typeof value === 'boolean') return value ? 'Sim' : 'Não'
     if (isDate(value)) return formatDate(value, false, true)
     return value
@@ -293,7 +286,7 @@ export const ImportStep: React.FC<Props> = ({
           <tbody>
             {paginatedRegisters.length > 0 &&
               paginatedRegisters?.map(
-                ({ data, status, message, errors }, key) => {
+                ({ data, status, message }, key) => {
                   const Icon =
                     status === 'not-send'
                       ? FiSend
@@ -321,9 +314,7 @@ export const ImportStep: React.FC<Props> = ({
                       {dataSheet
                         .filter(({ column }) => !column?.hidden)
                         .map(({ column }, key) => (
-                          <td key={key}>
-                            {getCell(data[column.key], column.key, errors)}
-                          </td>
+                          <td key={key}>{getCell(data[column.key])}</td>
                         ))}
                       <td>
                         <TableRow>

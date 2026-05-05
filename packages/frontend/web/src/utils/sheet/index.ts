@@ -187,12 +187,12 @@ const getRow = (
       if (col === 'phone') value = formatPhone(String(value))
       Object.assign(data, { [col]: getValue(value) })
     })
-    
+
     // Se não tiver data de nascimento, adiciona data padrão
     if (!data.dob) {
       data.dob = '2017-12-23'
     }
-    
+
     sleep(row.number).then(() => {
       schema
         .validate(data, {
@@ -207,18 +207,18 @@ const getRow = (
         )
         .catch(err => {
           let message = 'Erro desconhecido'
-          let errors: IErrors
+          let fieldErrors: IErrors = {}
           if (err instanceof ValidationError) {
-            message = 'Registro com erro(s)'
-            errors = getValidationErrors(err)
-            Object.assign(data, errors)
+            fieldErrors = getValidationErrors(err)
+            message = Object.values(fieldErrors).join('; ')
           }
           reject(
             new DataError({
               status: 'error',
               message,
               data,
-              errors: Object.keys(errors)
+              errors: Object.keys(fieldErrors),
+              fieldErrors
             })
           )
         })
@@ -274,6 +274,7 @@ export const sendData = (
   changeStatus: (status: SetStateAction<IStatus>) => void
 ): Promise<ReturnData[]> => {
   const parseRequestErrorMessage = (error: any): string => {
+    if (typeof error === 'string') return error
     const code = error?.response?.data?.message || error?.message
     const details = error?.response?.data?.errors
     return getErrorMessage(code, details)

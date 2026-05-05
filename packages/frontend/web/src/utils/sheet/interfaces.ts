@@ -19,6 +19,7 @@ export interface ReturnData<T = any> {
   message: string
   data: T
   errors?: string[]
+  fieldErrors?: { [key: string]: string }
 }
 
 export interface IWorksheet {
