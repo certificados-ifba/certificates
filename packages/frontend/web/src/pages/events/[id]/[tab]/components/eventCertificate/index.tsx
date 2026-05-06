@@ -31,7 +31,7 @@ interface IApiModel {
   created_at: string
 }
 
-const STORAGE_URL = process.env.baseURL || 'http://localhost:4001'
+const STORAGE_URL = process.env.NEXT_PUBLIC_STORAGE_URL || 'http://localhost:4001'
 
 function apiModelToCertificate(model: IApiModel): ICertificate {
   const frontPage = model.pages.find(p => p.type === 'frente')

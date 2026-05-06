@@ -18,11 +18,11 @@ module.exports = withImages({
     sheetPass: process.env.SHEET_PASSWORD || '',
   },
   images: {
-    domains: [
-      'localhost',
-      '*.cloudflare.net',
-      '*.amazonaws.com',
-      '*.azure.net',
+    remotePatterns: [
+      { protocol: 'http',  hostname: 'localhost' },
+      { protocol: 'https', hostname: '**.cloudflare.net' },
+      { protocol: 'https', hostname: '**.amazonaws.com' },
+      { protocol: 'https', hostname: '**.azure.net' },
     ],
   },
   async redirects() {

@@ -164,7 +164,7 @@ export class ModelsController {
 
   @Put(':id')
   @Authorization(true)
-  @Permission('model_create')
+  @Permission('model_update')
   @ApiOkResponse({
     type: UpdateModelResponseDto
   })

@@ -22,6 +22,7 @@ interface ICertificate {
 export const EventCertificatesStep: React.FC<Props> = ({ event }) => {
   const [list, setList] = useState<ICertificate[]>([])
   const [loading, setLoading] = useState(false)
+  const [limitWarning, setLimitWarning] = useState(false)
 
   useEffect(() => {
     const loadData = async () => {
@@ -32,7 +33,12 @@ export const EventCertificatesStep: React.FC<Props> = ({ event }) => {
           params: { take: 100, skip: 0 }
         })
         const data = response?.data?.data
-        if (Array.isArray(data)) setList(data)
+        if (Array.isArray(data)) {
+          setList(data)
+          if (data.length >= 100) {
+            setLimitWarning(true)
+          }
+        }
       } catch {
         // silently ignore
       } finally {
@@ -56,7 +62,13 @@ export const EventCertificatesStep: React.FC<Props> = ({ event }) => {
   }
 
   return (
-    <Table>
+    <>
+      {limitWarning && (
+        <p style={{ color: '#c05621', padding: '8px 0' }}>
+          Atenção: apenas os primeiros 100 certificados estão sendo exibidos. Podem existir mais registros.
+        </p>
+      )}
+      <Table>
       <thead>
         <tr>
           <th>Participante</th>
@@ -92,5 +104,6 @@ export const EventCertificatesStep: React.FC<Props> = ({ event }) => {
         ))}
       </tbody>
     </Table>
+    </>
   )
 }

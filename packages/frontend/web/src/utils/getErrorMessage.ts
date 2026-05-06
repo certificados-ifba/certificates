@@ -61,6 +61,7 @@ export const getErrorMessage = (
       break
     case 'event_update_by_id_precondition_failed':
       message = 'Dados inválidos ao atualizar o evento.'
+      break
     case 'participant_delete_conflict':
       message =
         'O participante não pode ser removido porque está vinculado a um evento.'

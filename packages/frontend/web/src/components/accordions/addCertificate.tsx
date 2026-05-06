@@ -110,8 +110,6 @@ const AddCertificate: React.FC<Props> = ({
   const handleSubmit = useCallback(
     async data => {
       try {
-        console.log('📝 [DEBUG] Form data:', data)
-
         setLoading(true)
         const schema = Yup.object().shape({
           name: Yup.string().required('Nome do modelo é obrigatório')
@@ -149,11 +147,6 @@ const AddCertificate: React.FC<Props> = ({
         // Coletar dados dos layouts
         const frontLayoutData = frontLayoutConfig.current || layoutFrontFormRef.current?.getData() || {}
         const verseLayoutData = isVerse ? (verseLayoutConfig.current || layoutVerseFormRef.current?.getData() || {}) : null
-
-        console.log('🎨 [DEBUG] Front layout data:', frontLayoutData)
-        console.log('🔄 [DEBUG] Verse layout data:', verseLayoutData)
-        console.log('🖼️ [DEBUG] Preview front:', previewFront)
-        console.log('🖼️ [DEBUG] Preview verse:', previewVerse)
 
         // Montar objeto pages conforme esperado pelo backend
         const pages = [
@@ -219,8 +212,6 @@ const AddCertificate: React.FC<Props> = ({
           criterions,
           is_default: isDefault
         }
-
-        console.log('🚀 [DEBUG] Payload to send:', JSON.stringify(payload, null, 2))
 
         if (edit && modelData?.id) {
           await api.put(`events/${eventId}/models/${modelData.id}`, payload)

@@ -55,7 +55,7 @@ interface Props {
   event?: any
 }
 
-const STORAGE_URL = process.env.baseURL || 'http://localhost:4001'
+const STORAGE_URL = process.env.NEXT_PUBLIC_STORAGE_URL || 'http://localhost:4001'
 
 const formatDateRange = (start: string, end: string): string => {
   const s = new Date(start)
@@ -182,6 +182,9 @@ export const EventCertificate: React.FC<Props> = ({ event }) => {
       setLoadingParticipants(true)
       const res = await api.get(`events/${event.id}/certificates`, { params: { take: 100, skip: 0 } })
       const certs: any[] = res?.data?.data || []
+      if (certs.length >= 100) {
+        console.warn('[EventCertificate] Limite de 100 participantes atingido. Podem existir mais registros não exibidos.')
+      }
       const hasCriterions = certificate.criterions && certificate.criterions.length > 0
 
       // Todos os critérios do modelo já populados (type_activity.name e function.name)
@@ -196,8 +199,8 @@ export const EventCertificate: React.FC<Props> = ({ event }) => {
         const seen = new Set<string>()
         participants = []
         for (const c of certs) {
-          if (!c?.participant?.name || seen.has(c.participant.name)) continue
-          seen.add(c.participant.name)
+          if (!c?.participant?.id || seen.has(c.participant.id)) continue
+          seen.add(c.participant.id)
           participants.push({
             id: c.participant.id || c.id,
             name: c.participant.name,
@@ -209,8 +212,8 @@ export const EventCertificate: React.FC<Props> = ({ event }) => {
         const seen = new Set<string>()
         participants = []
         for (const c of certs) {
-          if (!c?.participant?.name || seen.has(c.participant.name)) continue
-          seen.add(c.participant.name)
+          if (!c?.participant?.id || seen.has(c.participant.id)) continue
+          seen.add(c.participant.id)
           participants.push({ id: c.participant.id || c.id, name: c.participant.name, combinations: [], workload: c.workload })
         }
       }
