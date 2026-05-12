@@ -1,11 +1,4 @@
-import {
-  Button,
-  Card,
-  Stepper,
-  DownloadStep,
-  ImportStep,
-  InfoStep
-} from '@components'
+import { Button, Card, Stepper, ImportStep, InfoStep } from '@components'
 import {
   createSheet,
   downloadSheet,
@@ -41,7 +34,6 @@ export const Import: React.FC<Props> = ({
 }) => {
   const [file, setFile] = useState<File>()
   const [isLoading, setIsLoading] = useState(false)
-  const [downloaded, setDownloaded] = useState(false)
   const [finished, setFinished] = useState(false)
   const [currentStep, setCurrentStep] = useState(0)
   const router = useRouter()
@@ -70,7 +62,6 @@ export const Import: React.FC<Props> = ({
         filename
       )
       setIsLoading(false)
-      setDownloaded(true)
     }
     if (isLoading) download()
   }, [dataSheet, filename, isLoading, worksheets, formulas])
@@ -78,22 +69,14 @@ export const Import: React.FC<Props> = ({
   const steps = [
     {
       id: 0,
-      name: 'Download',
-      textButton: 'Faça o download antes',
-      component: (
-        <DownloadStep loading={isLoading} onDownload={handleDownload} />
-      ),
-      enablePreviousStep: true,
-      enableNextStep: !!downloaded
-    },
-    {
-      id: 1,
       name: 'Instruções',
       textButton: 'Selecione o arquivo antes',
       component: (
         <InfoStep
           onUpload={handleFileSelected}
           onRemove={handleFileRemove}
+          onDownload={handleDownload}
+          loading={isLoading}
           dataSheet={dataSheet}
           examples={examples}
         />
@@ -102,7 +85,7 @@ export const Import: React.FC<Props> = ({
       enableNextStep: !!file
     },
     {
-      id: 2,
+      id: 1,
       name: 'Importando',
       textButton: 'Retornar',
       component: (
@@ -128,7 +111,6 @@ export const Import: React.FC<Props> = ({
   }, [currentStep, router, steps.length, url])
 
   const goBack = useCallback(() => {
-    setDownloaded(false)
     setFile(null)
     setFinished(false)
     if (currentStep === 0) {
