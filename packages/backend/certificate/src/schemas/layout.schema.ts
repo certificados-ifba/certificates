@@ -31,6 +31,11 @@ export const SidesSchema = new Schema({
 })
 
 export const LayoutSchema = new Schema({
+  orientation: {
+    type: String,
+    required: false,
+    default: 'horizontal'
+  },
   padding: {
     type: SidesSchema,
     required: [true, 'Padding can not be empty']

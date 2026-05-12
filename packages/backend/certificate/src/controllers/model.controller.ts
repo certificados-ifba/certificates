@@ -6,6 +6,7 @@ import { IModelCreateResponse } from '../interfaces/model-create-response.interf
 import { IModelDeleteResponse } from '../interfaces/model-delete-response.interface'
 import { IModelListParams } from '../interfaces/model-list-params.interface'
 import { IModelListResponse } from '../interfaces/model-list-response.interface'
+import { IModelUpdateResponse } from '../interfaces/model-update-response.interface'
 import { IModel } from '../interfaces/model.interface'
 import { ModelService } from '../services/model.service'
 
@@ -83,6 +84,51 @@ export class ModelController {
       result = {
         status: HttpStatus.BAD_REQUEST,
         message: 'model_create_bad_request',
+        model: null,
+        errors: null
+      }
+    }
+
+    return result
+  }
+
+  @MessagePattern('model_update')
+  public async modelUpdate(params: {
+    id: string
+    model: Partial<import('../interfaces/model.interface').IModel>
+  }): Promise<IModelUpdateResponse> {
+    let result: IModelUpdateResponse
+
+    if (params?.id && params?.model) {
+      try {
+        const model = await this.modelService.updateModelById(params.id, params.model)
+        if (model) {
+          result = {
+            status: HttpStatus.OK,
+            message: 'model_update_success',
+            model,
+            errors: null
+          }
+        } else {
+          result = {
+            status: HttpStatus.NOT_FOUND,
+            message: 'model_update_not_found',
+            model: null,
+            errors: null
+          }
+        }
+      } catch (e) {
+        result = {
+          status: HttpStatus.PRECONDITION_FAILED,
+          message: 'model_update_precondition_failed',
+          model: null,
+          errors: e.errors
+        }
+      }
+    } else {
+      result = {
+        status: HttpStatus.BAD_REQUEST,
+        message: 'model_update_bad_request',
         model: null,
         errors: null
       }

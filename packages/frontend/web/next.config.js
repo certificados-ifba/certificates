@@ -17,6 +17,14 @@ module.exports = withImages({
     siteKey: process.env?.HCAPTCHA_SITEKEY,
     sheetPass: process.env.SHEET_PASSWORD || '',
   },
+  images: {
+    remotePatterns: [
+      { protocol: 'http',  hostname: 'localhost' },
+      { protocol: 'https', hostname: '**.cloudflare.net' },
+      { protocol: 'https', hostname: '**.amazonaws.com' },
+      { protocol: 'https', hostname: '**.azure.net' },
+    ],
+  },
   async redirects() {
     return [
       {

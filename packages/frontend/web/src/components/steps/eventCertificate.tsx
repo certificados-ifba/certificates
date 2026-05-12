@@ -1,18 +1,18 @@
 import { useCallback, useState } from 'react'
 import {
-    FiAward,
-    FiCheck,
-    FiCheckSquare,
-    FiSquare,
-    FiX
+  FiAward,
+  FiCheck,
+  FiCheckSquare,
+  FiSquare,
+  FiX
 } from 'react-icons/fi'
 
 import ICertificate from '../../dtos/ICertificate'
 import { Row } from '../../styles/components/grid'
 import {
-    CardContainer,
-    Container,
-    Header
+  CardContainer,
+  Container,
+  Header
 } from '../../styles/components/steps/eventCertificate'
 import Certificate from '../accordions/certificate'
 import { initialTextConfig } from '../accordions/certificateLayout'
@@ -35,7 +35,7 @@ const EventCertificate: React.FC = () => {
       id: '1',
       name: 'Modelo Padrão 3',
       front: {
-        img: "'/teste1.png'",
+        img: "/teste1.png",
         text:
           '<p>Certificamos que <strong>[participante_nome]</strong> participou da <strong>[evento_edicao] [evento_nome] ([evento_sigla])</strong> do Instituto Federal de Educação, Ciência e Tecnologia da Bahia (IFBA) Campus Vitória da Conquista, realizada no período de <strong>[participacao_periodo]</strong>, com cargga horária de <strong>[participacao_carga_horaria]</strong></p>'                       },
       roles: [

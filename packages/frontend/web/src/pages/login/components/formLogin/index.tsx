@@ -31,8 +31,6 @@ export const FormLogin: React.FC<Props> = ({ setForgotPassword }) => {
         setLoading(true)
         formRef.current?.setErrors({})
 
-        console.log('🔐 [LOGIN DEBUG] Iniciando login com:', { login: data.login, password: '***' })
-
         const schema = Yup.object().shape({
           login: Yup.string()
             .required('Por favor, digite o seu login')

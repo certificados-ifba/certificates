@@ -12,11 +12,11 @@ import {
   FiCheckSquare,
   FiMinus,
   FiPlus,
-  FiSquare,
   FiX
 } from 'react-icons/fi'
 
 import { IRole } from '../../dtos/ICertificate'
+import api from '../../services/axios'
 import { Section } from '../../styles/components/accordion'
 import { Accordion } from '../accordion'
 import { Alert } from '../alert'
@@ -27,22 +27,64 @@ import { Table } from '../table'
 
 interface Props {
   onFormChange: (formRef: MutableRefObject<FormHandles>) => void
+  onRolesChange?: (roles: IRole[]) => void
+  isDefault?: boolean
+  onDefaultChange?: (value: boolean) => void
   preview?: boolean
   roles?: IRole[]
   id: string
 }
 
-const Roles: React.FC<Props> = ({ onFormChange, preview, roles, id }) => {
+const Roles: React.FC<Props> = ({ onFormChange, onRolesChange, isDefault, onDefaultChange, preview, roles, id }) => {
   const formRef = useRef<FormHandles>(null)
 
-  const [defaultModel, setDefaultModel] = useState(
-    !roles ? false : roles.length === 0
-  )
   const [roleList, setRoleList] = useState(roles || [])
+  const [activityOptions, setActivityOptions] = useState<any[]>([])
+  const [functionOptions, setFunctionOptions] = useState<any[]>([])
 
   useEffect(() => {
     onFormChange(formRef)
   }, [formRef, onFormChange])
+
+  useEffect(() => {
+    if (onRolesChange) {
+      onRolesChange(roleList)
+    }
+  }, [roleList, onRolesChange])
+
+  useEffect(() => {
+    if (isDefault) {
+      setRoleList([])
+    }
+  }, [isDefault])
+
+  useEffect(() => {
+    const loadOptions = async () => {
+      try {
+        const [actRes, funcRes] = await Promise.all([
+          api.get('/activity_types', { params: { sort_by: 'name', order_by: 'ASC' } }),
+          api.get('/functions', { params: { sort_by: 'name', order_by: 'ASC' } })
+        ])
+        const activities = (actRes.data?.data?.generics || actRes.data?.data || [])
+        const functions = (funcRes.data?.data?.generics || funcRes.data?.data || [])
+        setActivityOptions(
+          activities.map((item: any) => ({
+            value: { name: item.name, value: item.id },
+            label: item.name.charAt(0).toUpperCase() + item.name.slice(1)
+          }))
+        )
+        setFunctionOptions(
+          functions.map((item: any) => ({
+            value: { name: item.name, value: item.id },
+            label: item.name.charAt(0).toUpperCase() + item.name.slice(1)
+          }))
+        )
+      } catch (err) {
+        console.error('Erro ao carregar opções de critérios:', err)
+      }
+    }
+    loadOptions()
+  }, [])
 
   const funcID = 'addFunction' + (preview ? 'modal' : '') + id
   const atvID = 'addActivity' + (preview ? 'modal' : '') + id
@@ -85,150 +127,102 @@ const Roles: React.FC<Props> = ({ onFormChange, preview, roles, id }) => {
     >
       <Accordion icon={FiCheckSquare} title="Critérios">
         {!preview && (
-          <Section paddingTop="md" paddingBottom="md">
-            <Button
-              size="small"
-              onClick={() => {
-                setDefaultModel(!defaultModel)
-              }}
-              outline={defaultModel}
-              inline
-              type="button"
-            >
-              {!defaultModel ? (
-                <FiCheckSquare size={20} />
-              ) : (
-                <FiSquare size={20} />
-              )}
-              <span>Possui algum critério?</span>
-            </Button>
+          <Section paddingTop="md" paddingBottom="md"></Section>
+        )}
+        {isDefault && (
+          <Section paddingTop={preview ? 'md' : undefined} paddingBottom="md">
+            <Alert type="warning" icon={FiAlertCircle}>
+              Atenção! Este certificado será utilizado para atividades
+              e funções que não possuem um modelo definido.<br />
+              <b>Verifique se o texto é adequado para esses casos.</b>
+            </Alert>
           </Section>
         )}
-        {!defaultModel && (
-          <>
-            <Section paddingTop={preview ? 'md' : undefined} paddingBottom="md">
-              <Table>
-                <thead>
+        {(!isDefault || !preview) && (
+        <Section paddingTop={preview ? 'md' : undefined} paddingBottom="md">
+          <Table>
+            <thead>
+              <tr>
+                <th>Nº</th>
+                <th style={tableStyle}>Tipo de Atividade</th>
+                <th style={tableStyle}>Função</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {!preview && (
+                <>
                   <tr>
-                    <th>Nº</th>
-                    <th style={tableStyle}>Tipo de Atividade</th>
-                    <th style={tableStyle}>Função</th>
-                    <th></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {!preview && (
-                    <>
-                      <tr>
-                        <td>-</td>
-                        <td>
-                          <Select
-                            formRef={formRef}
-                            name={atvID}
-                            isSearchable={false}
-                            options={[
-                              {
-                                value: { name: 'Mesa Redonda', value: '1' },
-                                label: 'Mesa Redonda'
-                              },
-                              {
-                                value: { name: 'Palestra', value: '2 ' },
-                                label: 'Palestra'
-                              }
-                            ]}
-                          />
-                        </td>
-                        <td>
-                          <Select
-                            formRef={formRef}
-                            name={funcID}
-                            isSearchable={false}
-                            options={[
-                              {
-                                value: { name: 'Palestrante', value: '1' },
-                                label: 'Palestrante'
-                              },
-                              {
-                                value: { name: 'Professor', value: '1' },
-                                label: 'Professor'
-                              }
-                            ]}
-                          />
-                        </td>
-                        <td>
-                          <Button
-                            inline
-                            square
-                            color="success"
-                            size="small"
-                            type="button"
-                            onClick={() => addRole()}
-                          >
-                            <FiPlus size={20} /> <span>Adicionar</span>
-                          </Button>
-                        </td>
-                      </tr>
-                    </>
-                  )}
-                  {roleList.map((role, index) => (
-                    <tr key={role.number}>
-                      <td>{index + 1}</td>
-                      <td>{role.activity.name}</td>
-                      <td>{role.function.name}</td>
-                      <td>
+                    <td>-</td>
+                    <td>
+                      <Select
+                        formRef={formRef}
+                        name={atvID}
+                        isSearchable={false}
+                        options={activityOptions}
+                        isDisabled={isDefault}
+                      />
+                    </td>
+                    <td>
+                      <Select
+                        formRef={formRef}
+                        name={funcID}
+                        isSearchable={false}
+                        options={functionOptions}
+                        isDisabled={isDefault}
+                      />
+                    </td>
+                    <td>
+                      <span title={isDefault ? 'Modelo padrão não adiciona critérios' : undefined} style={{ display: 'inline-block' }}>
                         <Button
-                          disabled={roleList.length === 1}
-                          ghost
                           inline
                           square
-                          color="danger"
                           size="small"
                           type="button"
-                          onClick={() => {
-                            setRoleList(current => current.filter(r => r !== role))
-                          }}
-                        >
-                          <FiMinus size={20} /> <span>Remover</span>
-                        </Button>
-                      </td>
-                    </tr>
-                  ))}
-                  {preview && (
-                    <tr>
-                      <td colSpan={4}>
-                        <Button
-                          square
-                          color="success"
-                          size="small"
-                          type="button"
-                          onClick={() => {
-                            setOpenModal(true)
-                          }}
+                          onClick={() => addRole()}
+                          disabled={isDefault}
                         >
                           <FiPlus size={20} /> <span>Adicionar</span>
                         </Button>
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </Table>
-            </Section>
-            {roleList.length === 0 && (
-              <Section paddingBottom="md">
-                <Alert type="danger" icon={FiAlertCircle}>
-                  Você tem que selecionar ao menos 1 critério!
-                </Alert>
-              </Section>
-            )}
-          </>
+                      </span>
+                    </td>
+                  </tr>
+                </>
+              )}
+              {roleList.map((role, index) => (
+                <tr key={role.number}>
+                  <td>{index + 1}</td>
+                  <td>{role.activity.name}</td>
+                  <td>{role.function.name}</td>
+                  <td>
+                    {!preview && (
+                      <Button
+                        disabled={roleList.length === 1 || isDefault}
+                        ghost
+                        inline
+                        square
+                        color="danger"
+                        size="small"
+                        type="button"
+                        onClick={() => {
+                          roleList.splice(roleList.indexOf(role), 1)
+                          setRoleList([...roleList])
+                        }}
+                      >
+                        <FiMinus size={20} /> <span>Remover</span>
+                      </Button>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </Table>
+        </Section>
         )}
-        {defaultModel && (
-          <Section paddingTop={preview ? 'md' : undefined} paddingBottom="md">
-            <Alert type="warning" icon={FiAlertCircle}>
-              Atenção! Esse certificado será usado para todos os tipos de
-              atividades e funções que não tenham nenhum modelo definido.
-              <br />
-              <b>Verifique se o texto fica consistente nesses casos</b>.
+        {roleList.length === 0 && !isDefault && (
+          <Section paddingBottom="md">
+            <Alert type="danger" icon={FiAlertCircle}>
+              Você tem que selecionar ao menos 1 critério!
             </Alert>
           </Section>
         )}
@@ -246,32 +240,14 @@ const Roles: React.FC<Props> = ({ onFormChange, preview, roles, id }) => {
                 formRef={formRef}
                 name={atvID}
                 isSearchable={false}
-                options={[
-                  {
-                    value: { name: 'Mesa Redonda', value: '1' },
-                    label: 'Mesa Redonda'
-                  },
-                  {
-                    value: { name: 'Palestra', value: '2 ' },
-                    label: 'Palestra'
-                  }
-                ]}
+                options={activityOptions}
               />
               <Select
                 label="Função"
                 formRef={formRef}
                 name={funcID}
                 isSearchable={false}
-                options={[
-                  {
-                    value: { name: 'Palestrante', value: '1' },
-                    label: 'Palestrante'
-                  },
-                  {
-                    value: { name: 'Professor', value: '1' },
-                    label: 'Professor'
-                  }
-                ]}
+                options={functionOptions}
               />
             </>
           )}

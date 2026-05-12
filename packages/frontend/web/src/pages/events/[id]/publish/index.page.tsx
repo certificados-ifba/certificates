@@ -3,11 +3,8 @@ import {
   Button,
   Card,
   Container,
-  // getSelected,
-  // getStepList,
-  Header
-  // StepConfig,
-  // Stepper
+  Header,
+  Stepper
 } from '@components'
 import { withAuth } from '@hocs'
 import { useToast } from '@providers'
@@ -18,39 +15,27 @@ import { useCallback, useEffect, useState } from 'react'
 import { FiCheck, FiChevronLeft, FiChevronRight, FiSend } from 'react-icons/fi'
 
 import { EventInfo } from '../components'
-import { EventActivity, EventCertificate, PublishSuccess } from './components'
+import {
+  EventActivity,
+  EventCertificate,
+  EventCertificatesStep,
+  PublishSuccess
+} from './components'
 import { CardHeader } from './styles'
-
-// import Alert from '../../../components/alert'
-// import Button from '../../../components/button'
-// import Card from '../../../components/card'
-// import Header from '../../../components/header'
-// import Stepper, {
-//   getSelected,
-//   getStepList,
-//   StepConfig
-// } from '../../../components/stepper'
-// import EventActivity from '../../../components/steps/eventActivity'
-// import EventCertificate from '../../../components/steps/eventCertificate'
-// import PublishSuccess from '../../../components/steps/publishSuccess'
-// import EventInfo from '../../../components/tabs/eventInfo'
-// import withAuth from '../../../hocs/withAuth'
-// import { useToast } from '../../../providers/toast'
-// import api from '../../../services/axios'
-// import { Container } from '../../../styles/pages/home'
-// import { CardHeader } from '../../../styles/pages/publish'
 
 const infoName = 'Informações'
 const activityName = 'Atividades'
 const modelName = 'Modelos de Certificados'
+const certificateName = 'Certificados'
 const endName = 'Pronto'
 
-// const stepConfig: StepConfig[] = [
-//   { name: infoName },
-//   { name: activityName },
-//   { name: modelName },
-//   { name: endName }
-// ]
+const stepList = [
+  { id: 0, name: infoName },
+  { id: 1, name: activityName },
+  { id: 2, name: modelName },
+  { id: 3, name: certificateName },
+  { id: 4, name: endName }
+]
 
 const Publish: React.FC = () => {
   const router = useRouter()
@@ -81,14 +66,46 @@ const Publish: React.FC = () => {
     if (id) loadData()
   }, [id, addToast])
 
-  const stepNames = [infoName, activityName, modelName, endName]
+  const stepNames = [infoName, activityName, modelName, certificateName, endName]
   const [step, setStep] = useState(0)
   const currentStep = stepNames[step]
 
   const publish = useCallback(async () => {
     setLoading(true)
     try {
-      const response = await api.post(`events/${id}/publish`, {})
+      // Validação: buscar modelos antes de publicar
+      const modelsResponse = await api.get(`events/${id}/models`)
+      const models: Array<{ is_default: boolean; criterions: any[] }> =
+        modelsResponse?.data?.data || []
+
+      const hasDefaultModel = models.some(m => m.is_default)
+      if (!hasDefaultModel) {
+        addToast({
+          type: 'error',
+          title: 'Modelo padrão ausente',
+          description:
+            'É necessário ter pelo menos um modelo de certificado marcado como padrão para publicar o evento.'
+        })
+        setLoading(false)
+        return false
+      }
+
+      const regularModels = models.filter(m => !m.is_default)
+      const regularWithoutCriterion = regularModels.filter(
+        m => !m.criterions || m.criterions.length === 0
+      )
+      if (regularWithoutCriterion.length > 0) {
+        addToast({
+          type: 'error',
+          title: 'Critérios ausentes',
+          description:
+            'Todos os modelos comuns (não padrão) precisam ter pelo menos um critério cadastrado antes de publicar o evento.'
+        })
+        setLoading(false)
+        return false
+      }
+
+      await api.post(`events/${id}/publish`, {})
       setLoading(false)
       return true
     } catch (err) {
@@ -112,6 +129,9 @@ const Publish: React.FC = () => {
         <Alert marginBottom="md" card={true} type="warning">
           <b>Atenção!</b> Revise as informações antes de publicar o evento.
         </Alert>
+      )}
+      {currentStep !== endName && (
+        <Stepper steps={stepList} current={step} />
       )}
       <Card>
         <CardHeader>
@@ -142,7 +162,7 @@ const Publish: React.FC = () => {
             onClick={() => {
               if (currentStep === endName) {
                 router.push(`/events/${event.id}/info`)
-              } else if (currentStep === modelName) {
+              } else if (currentStep === certificateName) {
                 publish().then(success => {
                   if (success) setStep(s => s + 1)
                 })
@@ -158,13 +178,13 @@ const Publish: React.FC = () => {
                 <span>Concluir</span>
               </>
             )}
-            {currentStep === modelName && (
+            {currentStep === certificateName && (
               <>
                 <FiCheck size={20} />
                 <span>Publicar</span>
               </>
             )}
-            {currentStep !== modelName && currentStep !== endName && (
+            {currentStep !== certificateName && currentStep !== endName && (
               <>
                 <FiChevronRight size={20} />
                 <span>Avançar</span>
@@ -179,6 +199,9 @@ const Publish: React.FC = () => {
           <EventActivity addToast={addToast} event={event} />
         )}
         {currentStep === modelName && <EventCertificate event={event} />}
+        {currentStep === certificateName && (
+          <EventCertificatesStep event={event} />
+        )}
         {currentStep === endName && <PublishSuccess />}
       </Card>
     </Container>
