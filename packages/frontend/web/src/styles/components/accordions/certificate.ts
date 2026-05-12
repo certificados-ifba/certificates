@@ -138,5 +138,8 @@ export interface ImageProps {
 
 export const Image = styled.div<ImageProps>`
   background-image: url(${props => props.img});
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  background-position: center;
   height: 878px;
 `

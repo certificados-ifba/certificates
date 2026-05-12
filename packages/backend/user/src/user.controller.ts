@@ -392,7 +392,10 @@ export class UserController {
       } else {
         userLink = await this.userService.getUserLinkByUser(user.id)
         if (!userLink) {
-          userLink = await this.userService.createUserLink(user.id)
+          userLink = await this.userService.createUserLink(
+            user.id,
+            user.role === 'PARTICIPANT' ? Date.now() + 48 * 60 * 60 * 1000 : undefined
+          )
         }
         const confirmLink = user.role === 'PARTICIPANT'
           ? this.userService.getParticipantConfirmationLink(userLink.link)
@@ -502,12 +505,13 @@ export class UserController {
               .toPromise()
           } else if (createdUser.email) {
             const userLink = await this.userService.createUserLink(
-              createdUser.id
+              createdUser.id,
+              Date.now() + 48 * 60 * 60 * 1000
             )
             this.mailerServiceClient
               .send('mail_send', {
                 to: createdUser.email,
-                subject: 'Confirmação de E-mail',
+                subject: 'E-mail de Confirmação',
                 template: '/templates/confirm_email',
                 context: {
                   name: createdUser.name,
@@ -549,8 +553,23 @@ export class UserController {
       try {
         const user = await this.userService.searchUserById(params.id)
         if (user) {
-          if (user.personal_data.cpf)
-            params.user.personal_data.cpf = user.personal_data.cpf
+          const newCpf = params.user?.personal_data?.cpf
+          if (newCpf && newCpf !== user.personal_data?.cpf) {
+            const usersWithCPF = await this.userService.searchUserByCpf(newCpf)
+            if (usersWithCPF) {
+              return {
+                status: HttpStatus.CONFLICT,
+                message: 'user_update_by_id_conflict',
+                user: null,
+                errors: {
+                  cpf: {
+                    message: 'CPF already registered',
+                    path: 'cpf'
+                  }
+                }
+              }
+            }
+          }
 
           const updatedUser = Object.assign(user, params.user)
 
@@ -582,7 +601,10 @@ export class UserController {
             user.role === 'PARTICIPANT' &&
             updatedUser.email
           ) {
-            const userLink = await this.userService.createUserLink(updatedUser.id)
+            const userLink = await this.userService.createUserLink(
+              updatedUser.id,
+              Date.now() + 48 * 60 * 60 * 1000
+            )
             this.mailerServiceClient
               .send('mail_send', {
                 to: updatedUser.email,
@@ -727,5 +749,53 @@ export class UserController {
     }
 
     return result
+  }
+
+  @MessagePattern('user_verify_password')
+  public async userVerifyPassword(params: {
+    id: string
+    password: string
+  }): Promise<{ status: number; message: string; errors: any }> {
+    if (!params?.id || !params?.password) {
+      return {
+        status: HttpStatus.BAD_REQUEST,
+        message: 'user_verify_password_bad_request',
+        errors: null
+      }
+    }
+
+    try {
+      const user = await this.userService.searchUserById(params.id)
+
+      if (!user) {
+        return {
+          status: HttpStatus.NOT_FOUND,
+          message: 'user_verify_password_not_found',
+          errors: null
+        }
+      }
+
+      const isMatch = user.compareEncryptedPassword(params.password)
+
+      if (!isMatch) {
+        return {
+          status: HttpStatus.UNAUTHORIZED,
+          message: 'user_verify_password_invalid',
+          errors: { password: { message: 'Senha incorreta', path: 'password' } }
+        }
+      }
+
+      return {
+        status: HttpStatus.OK,
+        message: 'user_verify_password_success',
+        errors: null
+      }
+    } catch (e) {
+      return {
+        status: HttpStatus.PRECONDITION_FAILED,
+        message: 'user_verify_password_precondition_failed',
+        errors: e.errors
+      }
+    }
   }
 }

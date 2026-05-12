@@ -8,18 +8,18 @@ import Head from 'next/head'
 import { useRouter } from 'next/router'
 import { useEffect, useState } from 'react'
 import {
-  FiFileText,
-  FiChevronLeft,
-  FiCalendar,
-  FiInfo,
   FiAward,
+  FiCalendar,
+  FiChevronLeft,
+  FiEdit3,
+  FiFileText,
+  FiInfo,
   FiLayers,
-  FiSend,
-  FiEdit3
+  FiSend
 } from 'react-icons/fi'
 
 import { EventActivity, EventInfo } from '../components'
-import { EventParticipant, EventCertificate } from './components'
+import { EventCertificate, EventParticipant } from './components'
 
 const EventDetail: React.FC = () => {
   const { push, query } = useRouter()
@@ -134,16 +134,16 @@ const EventDetail: React.FC = () => {
             path: 'activities'
           },
           {
-            name: 'Certificados',
-            icon: FiAward,
-            children: <EventParticipant event={event} />,
-            path: 'certificates'
-          },
-          {
             name: 'Modelos de Certificado',
             icon: FiLayers,
             children: <EventCertificate event={event} />,
             path: 'models'
+          },
+          {
+            name: 'Certificados',
+            icon: FiAward,
+            children: <EventParticipant event={event} />,
+            path: 'certificates'
           }
         ]}
       />

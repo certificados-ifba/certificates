@@ -1,16 +1,16 @@
 import {
-  FiAward,
-  FiEdit,
-  FiEyeOff,
-  FiTrash2
+    FiAward,
+    FiEdit,
+    FiEyeOff,
+    FiTrash2
 } from 'react-icons/fi'
 
 import ICertificate from '../../dtos/ICertificate'
 import {
-  Container,
-  Header,
-  ImagePreview,
-  Preview
+    Container,
+    Header,
+    ImagePreview,
+    Preview
 } from '../../styles/components/accordions/certificatePreview'
 import { Row } from '../../styles/components/grid'
 import { Button } from '../button'
@@ -90,6 +90,7 @@ const CertificatePreview: React.FC<Props> = ({
         <Roles
           id={certificate.id}
           roles={certificate.roles}
+          isDefault={certificate.is_default}
           onFormChange={() => {
             console.log('')
           }}

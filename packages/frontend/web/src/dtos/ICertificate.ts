@@ -26,6 +26,7 @@ interface ICertificate {
     activity: { name: string; id: string }
     function: { name: string; id: string }
   }>
+  is_default?: boolean
   edit?: boolean
   confirmed?: boolean
 }
@@ -37,6 +38,7 @@ export interface IRole {
 }
 
 export type { ICertificate }
+export default ICertificate
 
 export interface ILayout {
   padding: string
@@ -65,6 +67,7 @@ export interface IModelCertificate {
   name: string
   pages: IPage[]
   criterions: ICriterion[]
+  is_default?: boolean
 }
 
 // export interface ILayout {

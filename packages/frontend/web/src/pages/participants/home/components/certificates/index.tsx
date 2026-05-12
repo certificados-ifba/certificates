@@ -1,21 +1,15 @@
 import {
   Button,
   Card,
-  Column,
-  Input,
   Loading,
   PaginatedTable,
   TableRow
 } from '@components'
 import { usePaginatedRequest } from '@services'
-import { Form } from '@unform/web'
-import { formatDate } from '@utils'
-import { useCallback, useState } from 'react'
 import {
   FiDownload,
   FiExternalLink,
-  FiFileText,
-  FiSearch
+  FiFileText
 } from 'react-icons/fi'
 
 interface Props {

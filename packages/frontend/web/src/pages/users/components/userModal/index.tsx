@@ -14,7 +14,7 @@ import { useAuth, useToast } from '@providers'
 import { api, PaginatedRequest } from '@services'
 import { FormHandles } from '@unform/core'
 import { Form } from '@unform/web'
-import { getValidationErrors, maskEmail } from '@utils'
+import { getValidationErrors, isValidEmail, maskEmail } from '@utils'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   FiCheck,
@@ -78,12 +78,12 @@ export const UserModal: React.FC<Props> = ({
 
         if (type === 'add' || type === 'update-email') {
           schemaObj.repeatEmail = Yup.string()
-            .email('Por favor, digite um e-mail válido')
+            .test('email-is-valid', 'Por favor, digite um e-mail válido', isValidEmail)
             .required('Você precisa confirmar o e-mail')
             .oneOf([data.email], 'Os e-mails devem ser iguais.')
             .notOneOf([user?.email], 'O e-mail deve ser diferente do atual')
           schemaObj.email = Yup.string()
-            .email('Por favor, digite um e-mail válido')
+            .test('email-is-valid', 'Por favor, digite um e-mail válido', isValidEmail)
             .required('O usuário precisa ter um e-mail')
             .notOneOf([user?.email], 'O e-mail deve ser diferente do atual')
         }
@@ -128,10 +128,10 @@ export const UserModal: React.FC<Props> = ({
         addToast({
           type: 'error',
           title: `Erro ao ${type === 'update-email'
-              ? 'atualizar o e-mail'
-              : type === 'update'
-                ? 'atualizar o usuário'
-                : 'adicionar o usuário'
+            ? 'atualizar o e-mail'
+            : type === 'update'
+              ? 'atualizar o usuário'
+              : 'adicionar o usuário'
             }`,
           description: err
         })

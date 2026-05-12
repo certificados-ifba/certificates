@@ -87,7 +87,8 @@ export const CertificatePreview: React.FC<Props> = ({
       <div style={{ marginTop: '15px' }}>
         <Roles
           id={certificate.name}
-          roles={certificate.criterions}
+          roles={(certificate as any).roles}
+          isDefault={certificate.is_default}
           onFormChange={() => {
             console.log('')
           }}

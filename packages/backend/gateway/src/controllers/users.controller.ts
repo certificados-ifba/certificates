@@ -1,24 +1,23 @@
 import {
+  Body,
   Controller,
+  Delete,
+  Get,
+  HttpException,
+  HttpStatus,
+  Inject,
+  Param,
   Post,
   Put,
-  Get,
-  Body,
-  Req,
-  Inject,
-  HttpStatus,
-  HttpException,
-  Param,
-  Res,
   Query,
-  Delete
+  Req,
+  Res
 } from '@nestjs/common'
 import { ClientProxy } from '@nestjs/microservices'
 import {
-  ApiTags,
-  ApiOkResponse,
   ApiCreatedResponse,
-  ApiBearerAuth
+  ApiOkResponse,
+  ApiTags
 } from '@nestjs/swagger'
 import { Response } from 'express'
 
@@ -48,7 +47,7 @@ import { IServiceUserUpdateByIdResponse } from '../interfaces/user/service-user-
 export class UsersController {
   constructor(
     @Inject('USER_SERVICE') private readonly userServiceClient: ClientProxy
-  ) {}
+  ) { }
 
   @Get()
   @Authorization(true)
@@ -191,6 +190,31 @@ export class UsersController {
       data: updateUserResponse.user,
       errors: null
     }
+  }
+
+  @Post(':id/verify-password')
+  @Authorization(true)
+  @Permission('user_update_by_id')
+  public async verifyUserPassword(
+    @Param() params: UserIdDto,
+    @Body() body: { password: string }
+  ): Promise<{ message: string; errors: any }> {
+    const response = await this.userServiceClient
+      .send('user_verify_password', { id: params.id, password: body.password })
+      .toPromise()
+
+    if (response.status !== HttpStatus.OK) {
+      throw new HttpException(
+        {
+          message: response.message,
+          errors: response.errors,
+          data: null
+        },
+        response.status
+      )
+    }
+
+    return { message: response.message, errors: null }
   }
 
   @Delete(':id')

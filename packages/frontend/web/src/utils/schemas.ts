@@ -1,10 +1,10 @@
-import { formatDate, inDateRange, isValidCpf, minDate } from '@utils'
+import { formatDate, inDateRange, isValidCpf, isValidEmail, minDate } from '@utils'
 import * as Yup from 'yup'
 
 export const getParticipantSchema = (): Yup.AnySchema =>
   Yup.object().shape({
     name: Yup.string().required('O usuário precisa ter um nome'),
-    email: Yup.string().email('Por favor, digite um e-mail válido'),
+    email: Yup.string().test('email-is-valid', 'Por favor, digite um e-mail válido', (v) => !v || isValidEmail(v)),
     cpf: Yup.string()
       .matches(
         /(\d{3}).(\d{3}).(\d{3})-(\d{2})/,

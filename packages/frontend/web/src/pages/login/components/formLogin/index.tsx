@@ -1,7 +1,7 @@
 import { Button, Card, Help, Input, Row } from '@components'
 import { useAuth, useToast } from '@providers'
 import { FormHandles } from '@unform/core'
-import { getValidationErrors } from '@utils'
+import { getValidationErrors, isValidEmail } from '@utils'
 import { useRouter } from 'next/router'
 import { Dispatch, SetStateAction, useCallback, useRef, useState } from 'react'
 import { FiLock, FiLogIn, FiMail } from 'react-icons/fi'
@@ -31,12 +31,10 @@ export const FormLogin: React.FC<Props> = ({ setForgotPassword }) => {
         setLoading(true)
         formRef.current?.setErrors({})
 
-        console.log('🔐 [LOGIN DEBUG] Iniciando login com:', { login: data.login, password: '***' })
-
         const schema = Yup.object().shape({
           login: Yup.string()
             .required('Por favor, digite o seu login')
-            .email('Por favor, digite um e-mail válido'),
+            .test('email-is-valid', 'Por favor, digite um e-mail válido', isValidEmail),
           password: Yup.string().required('Por favor, digite a sua senha')
         })
 
@@ -80,7 +78,7 @@ export const FormLogin: React.FC<Props> = ({ setForgotPassword }) => {
             label="E-mail"
             name="login"
             icon={FiMail}
-            type="email"
+            type="email-masked"
             placeholder="Digite seu e-mail"
             autoComplete="username"
             marginBottom="sm"

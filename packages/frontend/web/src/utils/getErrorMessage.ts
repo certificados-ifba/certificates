@@ -12,8 +12,8 @@ export const getErrorMessage = (
       message = errors.email
         ? 'E-mail já cadastrado, tente com um diferente.'
         : errors.cpf
-        ? 'CPF já cadastrado, tente com um diferente.'
-        : 'Conflito encontrado, verifique os dados informados.'
+          ? 'CPF já cadastrado, tente com um diferente.'
+          : 'Conflito encontrado, verifique os dados informados.'
       break
     case 'user_get_by_link_expired':
       message = 'Link expirado, favor tente novamente.'
@@ -45,6 +45,34 @@ export const getErrorMessage = (
       break
     case 'certificate_create_participant_not_found':
       message = 'Participante não cadastrado'
+    case 'model_create_precondition_failed':
+      message = errors
+        ? Object.values(errors)
+            .map((e: any) => e.message)
+            .join(', ')
+        : 'Dados inválidos para criar o modelo de certificado.'
+      break
+    case 'model_create_bad_request':
+      message = 'Dados incompletos para criar o modelo de certificado.'
+      break
+    case 'event_get_by_id_not_found':
+      message = 'Evento não encontrado.'
+      break
+    case 'event_get_by_id_forbidden':
+      message = 'Você não tem permissão para acessar este evento.'
+      break
+    case 'event_update_by_id_forbidden':
+      message = 'Você não tem permissão para editar este evento.'
+      break
+    case 'event_update_by_id_not_found':
+      message = 'Evento não encontrado.'
+      break
+    case 'event_update_by_id_precondition_failed':
+      message = 'Dados inválidos ao atualizar o evento.'
+      break
+    case 'participant_delete_conflict':
+      message =
+        'O participante não pode ser removido porque está vinculado a um evento.'
       break
     default:
       message =

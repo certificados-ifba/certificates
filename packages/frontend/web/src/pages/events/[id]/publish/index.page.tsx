@@ -3,11 +3,8 @@ import {
   Button,
   Card,
   Container,
-  // getSelected,
-  // getStepList,
-  Header
-  // StepConfig,
-  // Stepper
+  Header,
+  Stepper
 } from '@components'
 import { withAuth } from '@hocs'
 import { useToast } from '@providers'
@@ -15,42 +12,30 @@ import { api } from '@services'
 import Head from 'next/head'
 import { useRouter } from 'next/router'
 import { useCallback, useEffect, useState } from 'react'
-import { FiChevronLeft, FiSend, FiChevronRight, FiCheck } from 'react-icons/fi'
+import { FiCheck, FiChevronLeft, FiChevronRight, FiSend } from 'react-icons/fi'
 
 import { EventInfo } from '../components'
-import { EventActivity, EventCertificate, PublishSuccess } from './components'
+import {
+  EventActivity,
+  EventCertificate,
+  EventCertificatesStep,
+  PublishSuccess
+} from './components'
 import { CardHeader } from './styles'
-
-// import Alert from '../../../components/alert'
-// import Button from '../../../components/button'
-// import Card from '../../../components/card'
-// import Header from '../../../components/header'
-// import Stepper, {
-//   getSelected,
-//   getStepList,
-//   StepConfig
-// } from '../../../components/stepper'
-// import EventActivity from '../../../components/steps/eventActivity'
-// import EventCertificate from '../../../components/steps/eventCertificate'
-// import PublishSuccess from '../../../components/steps/publishSuccess'
-// import EventInfo from '../../../components/tabs/eventInfo'
-// import withAuth from '../../../hocs/withAuth'
-// import { useToast } from '../../../providers/toast'
-// import api from '../../../services/axios'
-// import { Container } from '../../../styles/pages/home'
-// import { CardHeader } from '../../../styles/pages/publish'
 
 const infoName = 'Informações'
 const activityName = 'Atividades'
 const modelName = 'Modelos de Certificados'
+const certificateName = 'Certificados'
 const endName = 'Pronto'
 
-// const stepConfig: StepConfig[] = [
-//   { name: infoName },
-//   { name: activityName },
-//   { name: modelName },
-//   { name: endName }
-// ]
+const stepList = [
+  { id: 0, name: infoName },
+  { id: 1, name: activityName },
+  { id: 2, name: modelName },
+  { id: 3, name: certificateName },
+  { id: 4, name: endName }
+]
 
 const Publish: React.FC = () => {
   const router = useRouter()
@@ -81,12 +66,46 @@ const Publish: React.FC = () => {
     if (id) loadData()
   }, [id, addToast])
 
-  // const [steps, setSteps] = useState(getStepList(stepConfig, 0))
+  const stepNames = [infoName, activityName, modelName, certificateName, endName]
+  const [step, setStep] = useState(0)
+  const currentStep = stepNames[step]
 
   const publish = useCallback(async () => {
     setLoading(true)
     try {
-      const response = await api.post(`events/${id}/publish`, {})
+      // Validação: buscar modelos antes de publicar
+      const modelsResponse = await api.get(`events/${id}/models`)
+      const models: Array<{ is_default: boolean; criterions: any[] }> =
+        modelsResponse?.data?.data || []
+
+      const hasDefaultModel = models.some(m => m.is_default)
+      if (!hasDefaultModel) {
+        addToast({
+          type: 'error',
+          title: 'Modelo padrão ausente',
+          description:
+            'É necessário ter pelo menos um modelo de certificado marcado como padrão para publicar o evento.'
+        })
+        setLoading(false)
+        return false
+      }
+
+      const regularModels = models.filter(m => !m.is_default)
+      const regularWithoutCriterion = regularModels.filter(
+        m => !m.criterions || m.criterions.length === 0
+      )
+      if (regularWithoutCriterion.length > 0) {
+        addToast({
+          type: 'error',
+          title: 'Critérios ausentes',
+          description:
+            'Todos os modelos comuns (não padrão) precisam ter pelo menos um critério cadastrado antes de publicar o evento.'
+        })
+        setLoading(false)
+        return false
+      }
+
+      await api.post(`events/${id}/publish`, {})
       setLoading(false)
       return true
     } catch (err) {
@@ -106,27 +125,27 @@ const Publish: React.FC = () => {
         <title>Publicar {event?.name} | Evento</title>
       </Head>
       <Header title={`Publicar ${event?.name}`} icon={FiSend} />
-      {/* <Stepper steps={steps} /> */}
-      {/* {getSelected(steps).name !== endName && (
+      {currentStep !== endName && (
         <Alert marginBottom="md" card={true} type="warning">
           <b>Atenção!</b> Revise as informações antes de publicar o evento.
         </Alert>
       )}
-
+      {currentStep !== endName && (
+        <Stepper steps={stepList} current={step} />
+      )}
       <Card>
         <CardHeader>
           <Button
-            disabled={getSelected(steps).name === endName}
+            disabled={currentStep === endName}
             ghost
             color="secondary"
             size="default"
             type="button"
             onClick={() => {
-              const selected = getSelected(steps)
-              if (selected.name === infoName) {
+              if (currentStep === infoName) {
                 router.push(`/events/${event.id}/info`)
               } else {
-                setSteps(getStepList(stepConfig, selected.id - 1))
+                setStep(s => s - 1)
               }
             }}
             inline
@@ -135,58 +154,56 @@ const Publish: React.FC = () => {
             <span>Voltar</span>
           </Button>
           <Button
-            color={'primary'}
+            color="primary"
             size="default"
             type="button"
             loading={loading}
             disabled={loading}
             onClick={() => {
-              const selected = getSelected(steps)
-              if (selected.name === endName) {
+              if (currentStep === endName) {
                 router.push(`/events/${event.id}/info`)
-              } else if (selected.name === modelName) {
-                publish()
-                  .then(publish => {
-                    if (publish)
-                      setSteps(getStepList(stepConfig, selected.id + 1))
-                  })
-                  .catch()
+              } else if (currentStep === certificateName) {
+                publish().then(success => {
+                  if (success) setStep(s => s + 1)
+                })
               } else {
-                setSteps(getStepList(stepConfig, selected.id + 1))
+                setStep(s => s + 1)
               }
             }}
             inline
           >
-            {getSelected(steps).name === endName && (
+            {currentStep === endName && (
               <>
                 <FiCheck size={20} />
                 <span>Concluir</span>
               </>
             )}
-            {getSelected(steps).name === modelName && (
+            {currentStep === certificateName && (
               <>
                 <FiCheck size={20} />
                 <span>Publicar</span>
               </>
             )}
-            {getSelected(steps).name !== modelName &&
-              getSelected(steps).name !== endName && (
-                <>
-                  <FiChevronRight size={20} />
-                  <span>Avançar</span>
-                </>
-              )}
+            {currentStep !== certificateName && currentStep !== endName && (
+              <>
+                <FiChevronRight size={20} />
+                <span>Avançar</span>
+              </>
+            )}
           </Button>
         </CardHeader>
-        {getSelected(steps).name === infoName && (
+        {currentStep === infoName && (
           <EventInfo edit={false} event={event} setEvent={setEvent} />
         )}
-        {getSelected(steps).name === activityName && (
+        {currentStep === activityName && (
           <EventActivity addToast={addToast} event={event} />
         )}
-        {getSelected(steps).name === modelName && <EventCertificate />}
-        {getSelected(steps).name === endName && <PublishSuccess />}
-      </Card> */}
+        {currentStep === modelName && <EventCertificate event={event} />}
+        {currentStep === certificateName && (
+          <EventCertificatesStep event={event} />
+        )}
+        {currentStep === endName && <PublishSuccess />}
+      </Card>
     </Container>
   )
 }

@@ -2,6 +2,7 @@ import { IEvent } from '../event/event.interface'
 import { IGeneric } from '../generic/generic.interface'
 
 interface ILayout {
+  orientation?: string
   padding: string
   horizontal_padding: number
   vertical_padding: number
@@ -28,4 +29,5 @@ export interface IModel {
   name: string
   pages: IPage[]
   criterions: ICriterion[]
+  is_default: boolean
 }

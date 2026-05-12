@@ -24,6 +24,10 @@ export const ModelSchema = new mongoose.Schema(
     criterions: {
       type: [CriterionSchema],
       required: false
+    },
+    is_default: {
+      type: Boolean,
+      default: false
     }
   },
   {

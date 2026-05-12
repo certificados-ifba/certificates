@@ -46,3 +46,14 @@ export function minDate(value: string, min: string): boolean {
 export function maxDate(value: string, max: string): boolean {
   return value <= max
 }
+
+const EMAIL_FORMAT_REGEX = /^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/
+
+const ALLOWED_TLD_REGEX =
+  /\.(com|com\.br|edu\.br|org|org\.br|net|net\.br|gov\.br)$/i
+
+export function isValidEmail(value: string): boolean {
+  if (typeof value !== 'string') return false
+  if (!EMAIL_FORMAT_REGEX.test(value)) return false
+  return ALLOWED_TLD_REGEX.test(value)
+}
