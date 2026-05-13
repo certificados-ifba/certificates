@@ -212,7 +212,7 @@ export const ImportStep: React.FC<Props> = ({
               ? 'Importação finalizada'
               : 'Nenhum registro foi importado',
           type: successes > 0 ? 'done' : 'error',
-          info: `${successes} importado(s) | ${errors} erros`
+          info: `${successes} importado(s) | ${errors} erro(s)`
         }))
       } catch (error) {
         console.error(error?.message)
@@ -253,7 +253,7 @@ export const ImportStep: React.FC<Props> = ({
         <Info>{info}</Info>
         {errors > 0 && type !== 'loading' && (
           <Alert type="danger" card marginBottom="xs">
-            Houve <b>{errors} erro(s)</b> na importação. Verifique o(s)
+            Houve <b>{errors} erro(s)</b> na importação. Verifique os
             registros para mais informações.
           </Alert>
         )}

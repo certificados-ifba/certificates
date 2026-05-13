@@ -66,7 +66,7 @@ export const data = (
       type: 'date',
       formulae: [startDate, endDate],
       operator: 'between',
-      error: `Valor precisa ser uma data válida no formato "DD/MM/YYYY" e entre as datas ${formatDate(
+      error: `A data inicial deve estar entre ${formatDate(
         startDate
       )} e ${formatDate(endDate)}`,
       prompt: 'Insira a Data de início da atividade'
@@ -81,17 +81,17 @@ export const data = (
     },
     validation: {
       type: 'date',
-      formulae: [formatDate(startDate), formatDate(endDate)],
+      formulae: [startDate, endDate],
       operator: 'between',
-      error: `Valor precisa ser uma data válida no formato "DD/MM/YYYY" e entre as datas ${formatDate(
+      error: `A data final deve estar entre ${formatDate(
         startDate
-      )} e ${formatDate(endDate)}`,
+      )} e ${formatDate(endDate)} e ser maior ou igual à data inicial`,
       prompt: 'Insira a Data de encerramento da atividade'
     }
   }
 ]
 
 export const examples = [
-  ['Teste', '10', 'minicurso', '26/04/2019', '26/04/2019'],
-  ['Teste 2', '2', 'oficina', '26/04/2019', '26/04/2019']
+  ['Teste', '10', 'minicurso', '21/03/2025', '22/03/2025'],
+  ['Teste 2', '2', 'oficina', '23/03/2025', '24/03/2025']
 ]

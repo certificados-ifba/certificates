@@ -373,7 +373,7 @@ export const ImportStep: React.FC<Props> = ({
           <div className="small">{status.info}</div>
           {errorCount > 0 && status.type !== 'loading' && (
             <Alert type="danger" card={true}>
-              Houveram <b>{errorCount} erro(s)</b> na importação. Verifique os
+              Houve <b>{errorCount} erro(s)</b> na importação. Verifique os
               registros importados para mais informações.
             </Alert>
           )}
