@@ -55,6 +55,8 @@ import { Spinner } from '../spinner'
 import { Table } from '../table'
 import { TableRow } from '../tableRow'
 import CertificateInfo from './certificateInfo'
+import { Pagination } from '@components/importStep/styles'
+import { Select } from '@components/select'
 const maskCpf = (cpf: string): string => {
   if (!cpf) return ''
   const clean = cpf.replace(/\D/g, '')
@@ -73,7 +75,6 @@ const CertificateForm: React.FC<Props> = ({ event, closeAccordion }) => {
   const { addToast } = useToast()
   const { certificates, isEmpty, handleAdd, handleReset } = useCertificates()
   const formRef = useRef<FormHandles>(null)
-  const searchFormRef = useRef<FormHandles>(null)
 
   const participantsRequest = usePaginatedRequest<any, any>({
     url: 'participants',
@@ -236,12 +237,21 @@ const CertificateForm: React.FC<Props> = ({ event, closeAccordion }) => {
     </Group>
   )
 
-  const handleFilter = useCallback(
-    data => {
-      setFilters(data)
+  const handleParticipantSearch = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      const search = event.target.value.trim()
+
+      setFilters(search ? { search } : null)
       participantsRequest.resetPage()
     },
     [participantsRequest]
+  )
+
+  const handleSearchKeyDown = useCallback(
+    (event: React.KeyboardEvent<HTMLInputElement>) => {
+      if (event.key === 'Enter') event.preventDefault()
+    },
+    []
   )
 
   return (
@@ -316,15 +326,13 @@ const CertificateForm: React.FC<Props> = ({ event, closeAccordion }) => {
         <h2>Quem participou?</h2>
       </header>
       <Section paddingBottom="md">
-        <SearchForm>
-          <Form ref={searchFormRef} onSubmit={handleFilter}>
-            <Input
-              name="search"
-              placeholder="Buscar participante"
-              icon={FiSearch}
-            />
-          </Form>
-        </SearchForm>
+        <Input
+          name="search"
+          placeholder="Buscar participante"
+          icon={FiSearch}
+          onChange={handleParticipantSearch}
+          onKeyDown={handleSearchKeyDown}
+        />
         <Table>
           <thead>
             <tr>
@@ -366,6 +374,7 @@ const CertificateForm: React.FC<Props> = ({ event, closeAccordion }) => {
                   <td>
                     <TableRow>
                       <Button
+                        type="button"
                         ghost
                         inline
                         square
@@ -422,6 +431,7 @@ const CertificateForm: React.FC<Props> = ({ event, closeAccordion }) => {
           </span>
           <nav>
             <Button
+              type="button"
               ghost
               square
               size="small"
@@ -432,6 +442,7 @@ const CertificateForm: React.FC<Props> = ({ event, closeAccordion }) => {
               <FiChevronsLeft size={18} />
             </Button>
             <Button
+              type="button"
               ghost
               square
               size="small"
@@ -442,6 +453,7 @@ const CertificateForm: React.FC<Props> = ({ event, closeAccordion }) => {
               <FiChevronLeft size={18} />
             </Button>
             <Button
+              type="button"
               ghost
               square
               size="small"
@@ -452,6 +464,7 @@ const CertificateForm: React.FC<Props> = ({ event, closeAccordion }) => {
               <FiChevronRight size={18} />
             </Button>
             <Button
+              type="button"
               ghost
               square
               size="small"

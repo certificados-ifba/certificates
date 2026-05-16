@@ -50,7 +50,6 @@ export const CertificateForm: React.FC<Props> = ({ event, onParticipantSaved }) 
   const [filters, setFilters] = useState(null)
   const { addToast } = useToast()
   const formRef = useRef<FormHandles>(null)
-  const searchFormRef = useRef<FormHandles>(null)
   const participantsRequest = usePaginatedRequest<any, any>({
     url: 'participants',
     params: filters
@@ -198,12 +197,21 @@ export const CertificateForm: React.FC<Props> = ({ event, onParticipantSaved }) 
     </Group>
   )
 
-  const handleFilter = useCallback(
-    data => {
-      setFilters(data)
+  const handleParticipantSearch = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      const search = event.target.value.trim()
+
+      setFilters(search ? { search } : null)
       participantsRequest.resetPage()
     },
     [participantsRequest]
+  )
+
+  const handleSearchKeyDown = useCallback(
+    (event: React.KeyboardEvent<HTMLInputElement>) => {
+      if (event.key === 'Enter') event.preventDefault()
+    },
+    []
   )
 
   return (
@@ -288,14 +296,13 @@ export const CertificateForm: React.FC<Props> = ({ event, onParticipantSaved }) 
         <h2>Quem participou?</h2>
       </header>
       <Section paddingBottom="md">
-          <Form ref={searchFormRef} onSubmit={handleFilter}>
-            <Input
-              name="search"
-              placeholder="Buscar participante"
-              icon={FiSearch}
-              onChange={() => searchFormRef.current?.submitForm()}
-            />
-          </Form>
+        <Input
+          name="search"
+          placeholder="Buscar participante"
+          icon={FiSearch}
+          onChange={handleParticipantSearch}
+          onKeyDown={handleSearchKeyDown}
+        />
         <PaginatedTable request={participantsRequest}>
           <thead>
             <tr>
@@ -316,6 +323,7 @@ export const CertificateForm: React.FC<Props> = ({ event, onParticipantSaved }) 
                 <td>
                   <TableRow>
                     <Button
+                      type="button"
                       ghost
                       inline
                       square

@@ -399,11 +399,12 @@ export const Input: React.FC<Props> = ({
       }
   }, [type])
 
-  const handleOnChange = useCallback(() => {
+  const handleOnChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     if (inputState !== 'isFocused') {
       setInputState(inputRef.current?.value ? 'isFilled' : '')
     }
-  }, [inputState])
+    restAux.onChange?.(event)
+  }, [inputState, restAux])
 
   const dobMaskedProps: any = {
     ...restAux,
