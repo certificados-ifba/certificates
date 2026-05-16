@@ -15,10 +15,14 @@ interface Props {
 
 export const EventParticipant: React.FC<Props> = ({ event }) => {
   const [isOpen, setIsOpen] = useState(false)
+  const [revalidateKey, setRevalidateKey] = useState(0)
   const router = useRouter()
   const handleOpenAccordion = useCallback(() => setIsOpen(true), [])
   const handleCloseAccordion = useCallback(() => setIsOpen(false), [])
   const handleToggle = useCallback(() => setIsOpen(isOpen => !isOpen), [])
+  const handleRevalidateList = useCallback(() => {
+    setRevalidateKey(prev => prev + 1)
+  }, [])
 
   return (
     <Container>
@@ -36,12 +40,17 @@ export const EventParticipant: React.FC<Props> = ({ event }) => {
             <CertificateForm
               event={event}
               closeAccordion={handleCloseAccordion}
+              onParticipantSaved={handleRevalidateList}
             />
           </CertificatesProvider>
         </Accordion>
       )}
       <Accordion title="Participantes do Evento" icon={FiUsers}>
-        <CertificateList event={event} openAccordion={handleOpenAccordion} />
+        <CertificateList
+          key={revalidateKey}
+          event={event}
+          openAccordion={handleOpenAccordion}
+        />
       </Accordion>
     </Container>
   )

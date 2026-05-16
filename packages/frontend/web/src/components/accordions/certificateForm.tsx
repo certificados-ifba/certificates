@@ -2,7 +2,7 @@
 /* eslint-disable react/display-name */
 import { FormHandles } from '@unform/core'
 import { Form } from '@unform/web'
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   FiAlertCircle,
   FiAlignCenter,
@@ -16,7 +16,13 @@ import {
   FiFileText,
   FiMail,
   FiUsers,
-  FiX
+  FiX,
+  FiPlus,
+  FiSearch,
+  FiChevronsLeft,
+  FiChevronLeft,
+  FiChevronRight,
+  FiChevronsRight
 } from 'react-icons/fi'
 import { components } from 'react-select'
 import * as Yup from 'yup'
@@ -28,6 +34,7 @@ import { IParticipant } from '../../dtos/IParticipant'
 import { useCertificates } from '../../providers/certificates'
 import { useToast } from '../../providers/toast'
 import api from '../../services/axios'
+import { usePaginatedRequest } from '../../services/usePaginatedRequest'
 import { Footer, Section } from '../../styles/components/accordion'
 import {
   InfoOption,
@@ -36,6 +43,7 @@ import {
 import { Divider } from '../../styles/components/divider'
 import { Row } from '../../styles/components/grid'
 import { Badge, Group, IconArea } from '../../styles/components/select'
+import { theme } from '../../styles/theme'
 import { capitalize } from '../../utils/capitalize'
 import { getValidationErrors } from '../../utils/getValidationErrors'
 import { AccordionCard } from '../accordionCard'
@@ -43,7 +51,16 @@ import { Alert } from '../alert'
 import { AsyncSelect } from '../asyncSelect'
 import { Button } from '../button'
 import { Input } from '../input'
+import { Spinner } from '../spinner'
+import { Table } from '../table'
+import { TableRow } from '../tableRow'
 import CertificateInfo from './certificateInfo'
+const maskCpf = (cpf: string): string => {
+  if (!cpf) return ''
+  const clean = cpf.replace(/\D/g, '')
+  if (clean.length !== 11) return cpf
+  return `***.${clean.slice(3, 6)}.${clean.slice(6, 9)}-**`
+}
 
 interface Props {
   event: IEvent
@@ -52,9 +69,18 @@ interface Props {
 
 const CertificateForm: React.FC<Props> = ({ event, closeAccordion }) => {
   const [showAll, setShowAll] = useState(false)
+  const [filters, setFilters] = useState(null)
   const { addToast } = useToast()
   const { certificates, isEmpty, handleAdd, handleReset } = useCertificates()
   const formRef = useRef<FormHandles>(null)
+  const searchFormRef = useRef<FormHandles>(null)
+
+  const participantsRequest = usePaginatedRequest<any, any>({
+    url: 'participants',
+    params: filters
+      ? { ...filters, sort_by: 'name', order_by: 'ASC' }
+      : { sort_by: 'name', order_by: 'ASC' }
+  })
 
   const focusSelect = useCallback((field: string) => {
     const select = formRef?.current?.getFieldRef(field)?.select
@@ -103,6 +129,11 @@ const CertificateForm: React.FC<Props> = ({ event, closeAccordion }) => {
           authorship_order,
           additional_field,
           participant
+        })
+        addToast({
+          type: 'success',
+          title: 'Participante adicionado',
+          description: 'O participante foi adicionado com sucesso'
         })
         clearSelect('participant')
         focusSelect('participant')
@@ -205,18 +236,13 @@ const CertificateForm: React.FC<Props> = ({ event, closeAccordion }) => {
     </Group>
   )
 
-  const loadParticipants = useCallback(async search => {
-    const response = await api.get<{ data: IParticipant[] }>('/participants', {
-      params: { search, sort_by: 'name', order_by: 'ASC' }
-    })
-
-    const data = []
-
-    response.data?.data?.forEach(participant => {
-      data.push(participant)
-    })
-    return data
-  }, [])
+  const handleFilter = useCallback(
+    data => {
+      setFilters(data)
+      participantsRequest.resetPage()
+    },
+    [participantsRequest]
+  )
 
   return (
     <Form ref={formRef} onSubmit={() => {}}>
@@ -290,50 +316,157 @@ const CertificateForm: React.FC<Props> = ({ event, closeAccordion }) => {
         <h2>Quem participou?</h2>
       </header>
       <Section paddingBottom="md">
-        <Row cols={2}>
-          <AsyncSelect
-            marginBottom="md"
-            formRef={formRef}
-            name="participant"
-            loadOptions={loadParticipants}
-            handleOnSelect={handleParticipantSelect}
-            components={{
-              Control: ({ children, ...rest }: any) => (
-                <components.Control {...rest}>
-                  <>
-                    <IconArea>
-                      <FiUsers size={20} />
-                    </IconArea>
-                    {children}
-                  </>
-                </components.Control>
-              ),
-              Option: props => (
-                <components.Option {...props}>
-                  <TitleOption>{capitalize(props.data?.name)}</TitleOption>
-                  <Row cols={2}>
-                    <InfoOption>
-                      <FiCreditCard size={18} />
-                      {props.data?.personal_data?.cpf}
-                    </InfoOption>
-                    <InfoOption>
-                      <FiMail size={18} />
-                      {props.data?.email}
-                    </InfoOption>
-                    <InfoOption>
-                      <FiCalendar size={18} />
-                      {props.data?.personal_data?.dob}
-                    </InfoOption>
-                    <InfoOption>
-                      <FiClock size={18} />
-                      {new Date(props.data?.updated_at).toLocaleString()}
-                    </InfoOption>
-                  </Row>
-                </components.Option>
-              )
-            }}
-          />
-        </Row>
+        <SearchForm>
+          <Form ref={searchFormRef} onSubmit={handleFilter}>
+            <Input
+              name="search"
+              placeholder="Buscar participante"
+              icon={FiSearch}
+            />
+          </Form>
+        </SearchForm>
+        <Table>
+          <thead>
+            <tr>
+              <th>Nome</th>
+              <th>CPF</th>
+              <th>Email</th>
+              <th>Data Nascimento</th>
+              <th style={{ width: 32 }} />
+            </tr>
+          </thead>
+          <tbody>
+            {(!participantsRequest.data ||
+              participantsRequest.data?.data?.length === 0) &&
+            !participantsRequest.error ? (
+              <tr>
+                <td
+                  colSpan={5}
+                  style={{ textAlign: 'center', padding: '40px' }}
+                >
+                  <Spinner size={50} color={theme.colors.secondary} />
+                </td>
+              </tr>
+            ) : participantsRequest.data?.data?.length === 0 ? (
+              <tr>
+                <td
+                  colSpan={5}
+                  style={{ textAlign: 'center', padding: '20px' }}
+                >
+                  Nenhum participante encontrado
+                </td>
+              </tr>
+            ) : (
+              participantsRequest.data?.data?.map(participant => (
+                <tr key={participant.id}>
+                  <td>{capitalize(participant.name)}</td>
+                  <td>{maskCpf(participant.personal_data?.cpf)}</td>
+                  <td>{participant.email}</td>
+                  <td>{participant.personal_data?.dob}</td>
+                  <td>
+                    <TableRow>
+                      <Button
+                        ghost
+                        inline
+                        square
+                        color="success"
+                        size="small"
+                        onClick={() => handleParticipantSelect(participant)}
+                      >
+                        <FiPlus size={20} />
+                      </Button>
+                    </TableRow>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </Table>
+        <Pagination>
+          <div>
+            <span className="hide-md-down">Linhas por página</span>
+            <Select
+              menuPosition="fixed"
+              instanceId="perPage"
+              isSearchable={false}
+              onChange={participantsRequest.handlePerPage}
+              defaultValue={participantsRequest.perPage}
+              value={participantsRequest.perPage}
+              options={[
+                { value: 5, label: '5' },
+                { value: 10, label: '10' },
+                { value: 25, label: '25' },
+                { value: 50, label: '50' }
+              ]}
+            />
+          </div>
+          <span className="hide-md-down">
+            {`${
+              !participantsRequest.data ||
+              participantsRequest.data?.data?.length === 0
+                ? 0
+                : 1 +
+                  (participantsRequest.page - 1) *
+                    participantsRequest.perPage.value
+            } - ${
+              !participantsRequest.data
+                ? 0
+                : !participantsRequest.hasNextPage
+                ? participantsRequest.response?.headers['x-total-count']
+                : participantsRequest.page * participantsRequest.perPage.value
+            } de ${
+              !participantsRequest.data
+                ? 0
+                : participantsRequest.response?.headers['x-total-count']
+            }`}
+          </span>
+          <nav>
+            <Button
+              ghost
+              square
+              size="small"
+              color="dark"
+              disabled={!participantsRequest.hasPreviousPage}
+              onClick={participantsRequest.resetPage}
+            >
+              <FiChevronsLeft size={18} />
+            </Button>
+            <Button
+              ghost
+              square
+              size="small"
+              color="dark"
+              disabled={!participantsRequest.hasPreviousPage}
+              onClick={participantsRequest.loadPrevious}
+            >
+              <FiChevronLeft size={18} />
+            </Button>
+            <Button
+              ghost
+              square
+              size="small"
+              color="dark"
+              disabled={!participantsRequest.hasNextPage}
+              onClick={participantsRequest.loadNext}
+            >
+              <FiChevronRight size={18} />
+            </Button>
+            <Button
+              ghost
+              square
+              size="small"
+              color="dark"
+              disabled={!participantsRequest.hasNextPage}
+              onClick={() =>
+                participantsRequest.goToPage(
+                  Number(participantsRequest.response?.headers['x-total-page'])
+                )
+              }
+            >
+              <FiChevronsRight size={18} />
+            </Button>
+          </nav>
+        </Pagination>
         {isEmpty ? (
           <Alert icon={FiAlertCircle} size="md" type="info">
             Use o campo para adicionar participantes na atividade
@@ -384,7 +517,8 @@ const CertificateForm: React.FC<Props> = ({ event, closeAccordion }) => {
               Exibindo{' '}
               <b>
                 últimos{' '}
-                {!showAll && certificates.length > 4 ? 4 : certificates.length}{' '}                                                                                            </b>
+                {!showAll && certificates.length > 4 ? 4 : certificates.length}{' '}
+              </b>
               participantes adicionados. Até agora{' '}
               <b>foram adicionados {certificates.length}</b>.
             </Alert>

@@ -253,8 +253,8 @@ export const ImportStep: React.FC<Props> = ({
         <Info>{info}</Info>
         {errors > 0 && type !== 'loading' && (
           <Alert type="danger" card marginBottom="xs">
-            Houve <b>{errors} erro(s)</b> na importação. Verifique os
-            registros para mais informações.
+            Houve <b>{errors} erro(s)</b> na importação. Verifique o(s)
+            registro(s) para mais informações.
           </Alert>
         )}
         {errors > 0 && type !== 'loading' && (
@@ -285,8 +285,7 @@ export const ImportStep: React.FC<Props> = ({
           </thead>
           <tbody>
             {paginatedRegisters.length > 0 &&
-              paginatedRegisters?.map(
-                ({ data, status, message }, key) => {
+              paginatedRegisters?.map(({ data, status, message }, key) => {
                   const Icon =
                     status === 'not-send'
                       ? FiSend

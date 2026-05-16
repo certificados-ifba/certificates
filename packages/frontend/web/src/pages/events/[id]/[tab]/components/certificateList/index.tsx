@@ -108,7 +108,7 @@ export const CertificateList: React.FC<Props> = ({ event, openAccordion }) => {
     try {
       await api.delete(`events/${event?.id}/certificates/${id}`)
       addToast({
-        title: 'Certificado excluida',
+        title: 'Certificado excluido',
         type: 'success',
         description: 'Certificado excluído com sucesso.'
       })
