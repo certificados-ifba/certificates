@@ -4,9 +4,10 @@ import { v4 as uuid } from 'uuid'
 
 export interface ToastMessage {
   id: string
-  type?: 'success' | 'error' | 'info'
+  type?: 'success' | 'error' | 'info' | 'warning'
   title: string
   description?: string
+  fixed?: boolean
 }
 
 export interface ToastContextData {
@@ -22,17 +23,25 @@ export const ToastProvider: React.FC = ({ children }) => {
   const [messages, setMessages] = useState<ToastMessage[]>([])
 
   const addToast = useCallback(
-    ({ type, title, description }: Omit<ToastMessage, 'id'>) => {
+    ({ type, title, description, fixed }: Omit<ToastMessage, 'id'>) => {
       const id = uuid()
 
       const toast = {
         id,
         type,
         title,
-        description
+        description,
+        fixed
       }
 
-      setMessages(oldMessages => [...oldMessages, toast])
+      setMessages(oldMessages => {
+        if (!fixed) return [...oldMessages, toast]
+
+        const fixedMessages = [toast, ...oldMessages.filter(message => message.fixed)].slice(0, 3)
+        const temporaryMessages = oldMessages.filter(message => !message.fixed)
+
+        return [...fixedMessages, ...temporaryMessages]
+      })
     },
     []
   )

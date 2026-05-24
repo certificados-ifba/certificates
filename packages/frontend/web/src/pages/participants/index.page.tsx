@@ -16,7 +16,7 @@ import { useAuth, useToast } from '@providers'
 import { api, usePaginatedRequest } from '@services'
 import { theme } from '@styles'
 import { Form } from '@unform/web'
-import { maskEmail } from '@utils'
+import { maskDob, maskEmail } from '@utils'
 import Head from 'next/head'
 import { useRouter } from 'next/router'
 import { useCallback, useEffect, useState } from 'react'
@@ -38,20 +38,6 @@ const maskCpf = (cpf: string): string => {
   const clean = cpf.replace(/\D/g, '')
   if (clean.length !== 11) return cpf
   return `***.${clean.slice(3, 6)}.${clean.slice(6, 9)}-**`
-}
-
-const maskDob = (dob: string): string => {
-  if (!dob) return ''
-  const str = String(dob)
-  // Formato ISO: YYYY-MM-DD ou YYYY-MM-DDTHH:...
-  if (/^\d{4}-\d{2}-\d{2}/.test(str)) {
-    return `${str.slice(8, 10)}/${str.slice(5, 7)}/****`
-  }
-  // Formato DD/MM/YYYY ou DD-MM-YYYY
-  if (str.length >= 6) {
-    return str.substring(0, 6) + '****'
-  }
-  return '****'
 }
 
 const Participants: React.FC = () => {

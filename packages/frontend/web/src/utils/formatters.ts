@@ -68,3 +68,19 @@ export const maskEmail = (email: string): string => {
   const stars = '*'.repeat(local.length - 2)
   return `${first}${stars}${last}${domain}`
 }
+
+export const maskDob = (dob: string | Date): string => {
+  if (!dob) return ''
+
+  const value = dob instanceof Date ? formatDate(dob) : String(dob)
+
+  if (/^\d{4}-\d{2}-\d{2}/.test(value)) {
+    return `${value.slice(8, 10)}/${value.slice(5, 7)}/****`
+  }
+
+  if (/^\d{2}[/-]\d{2}[/-]\d{4}/.test(value)) {
+    return `${value.slice(0, 2)}/${value.slice(3, 5)}/****`
+  }
+
+  return value
+}

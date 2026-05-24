@@ -14,7 +14,7 @@ import { useToast } from '@providers'
 import { api, usePaginatedRequest } from '@services'
 import { FormHandles } from '@unform/core'
 import { Form } from '@unform/web'
-import { capitalize, getValidationErrors } from '@utils'
+import { capitalize, getValidationErrors, maskDob, maskEmail } from '@utils'
 import { useCallback, useRef, useState } from 'react'
 import {
   FiAlignCenter,
@@ -96,7 +96,8 @@ export const CertificateForm: React.FC<Props> = ({ event, onParticipantSaved }) 
         addToast({
           type: 'success',
           title: 'Participante cadastrado',
-          description: `${participant.name} foi cadastrado(a) com sucesso no evento.`
+          description: `${participant.name} foi cadastrado(a) com sucesso no evento.`,
+          fixed: true
         })
         if (onParticipantSaved) onParticipantSaved()
       } catch (err) {
@@ -318,8 +319,8 @@ export const CertificateForm: React.FC<Props> = ({ event, onParticipantSaved }) 
               <tr key={participant.id}>
                 <td>{capitalize(participant.name)}</td>
                 <td>{maskCpf(participant.personal_data?.cpf)}</td>
-                <td>{participant.email}</td>
-                <td>{participant.personal_data?.dob}</td>
+                <td>{maskEmail(participant.email)}</td>
+                <td>{maskDob(participant.personal_data?.dob)}</td>
                 <td>
                   <TableRow>
                     <Button

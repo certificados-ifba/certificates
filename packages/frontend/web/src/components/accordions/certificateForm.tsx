@@ -9,8 +9,6 @@ import {
   FiBook,
   FiBriefcase,
   FiCalendar,
-  FiChevronDown,
-  FiChevronUp,
   FiClock,
   FiCreditCard,
   FiFileText,
@@ -45,6 +43,7 @@ import { Row } from '../../styles/components/grid'
 import { Badge, Group, IconArea } from '../../styles/components/select'
 import { theme } from '../../styles/theme'
 import { capitalize } from '../../utils/capitalize'
+import { maskDob, maskEmail } from '../../utils/formatters'
 import { getValidationErrors } from '../../utils/getValidationErrors'
 import { AccordionCard } from '../accordionCard'
 import { Alert } from '../alert'
@@ -70,7 +69,6 @@ interface Props {
 }
 
 const CertificateForm: React.FC<Props> = ({ event, closeAccordion }) => {
-  const [showAll, setShowAll] = useState(false)
   const [filters, setFilters] = useState(null)
   const { addToast } = useToast()
   const { certificates, isEmpty, handleAdd, handleReset } = useCertificates()
@@ -134,7 +132,8 @@ const CertificateForm: React.FC<Props> = ({ event, closeAccordion }) => {
         addToast({
           type: 'success',
           title: 'Participante adicionado',
-          description: 'O participante foi adicionado com sucesso'
+          description: 'O participante foi adicionado com sucesso',
+          fixed: true
         })
         clearSelect('participant')
         focusSelect('participant')
@@ -254,6 +253,8 @@ const CertificateForm: React.FC<Props> = ({ event, closeAccordion }) => {
     []
   )
 
+  const recentCertificates = [...certificates].slice(-3).reverse()
+
   return (
     <Form ref={formRef} onSubmit={() => {}}>
       <header>
@@ -369,8 +370,8 @@ const CertificateForm: React.FC<Props> = ({ event, closeAccordion }) => {
                 <tr key={participant.id}>
                   <td>{capitalize(participant.name)}</td>
                   <td>{maskCpf(participant.personal_data?.cpf)}</td>
-                  <td>{participant.email}</td>
-                  <td>{participant.personal_data?.dob}</td>
+                  <td>{maskEmail(participant.email)}</td>
+                  <td>{maskDob(participant.personal_data?.dob)}</td>
                   <td>
                     <TableRow>
                       <Button
@@ -487,78 +488,46 @@ const CertificateForm: React.FC<Props> = ({ event, closeAccordion }) => {
         ) : (
           <>
             <Row cols={4} marginBottom="md">
-              {certificates?.map(
-                (certificate, index) =>
-                  (showAll || index < 4) && (
-                    <div key={index}>
-                      <AccordionCard
-                        info={
-                          <CertificateInfo
-                            eventId={event.id}
-                            certificate={certificate}
-                          />
-                        }
-                      >
-                        <main>
-                          <Alert
-                            marginBottom="xs"
-                            size="sm"
-                            icon={FiCreditCard}
-                          >
-                            {certificate?.participant?.personal_data?.cpf}
-                          </Alert>
-                          {certificate?.participant?.email && (
-                            <Alert marginBottom="xs" size="sm" icon={FiMail}>
-                              {certificate?.participant?.email}
-                            </Alert>
-                          )}
-                          <Alert size="sm" marginBottom="xs" icon={FiCalendar}>
-                            {certificate?.participant?.personal_data?.dob}
-                          </Alert>
-                          <Alert size="sm" icon={FiClock}>
-                            {new Date(
-                              certificate?.participant?.updated_at
-                            ).toLocaleString()}
-                          </Alert>
-                        </main>
-                      </AccordionCard>
-                    </div>
-                  )
-              )}
+              {recentCertificates.map((certificate, index) => (
+                <div key={certificate?.participant?.id || index}>
+                  <AccordionCard
+                    info={
+                      <CertificateInfo
+                        eventId={event.id}
+                        certificate={certificate}
+                      />
+                    }
+                  >
+                    <main>
+                      <Alert marginBottom="xs" size="sm" icon={FiCreditCard}>
+                        {certificate?.participant?.personal_data?.cpf}
+                      </Alert>
+                      {certificate?.participant?.email && (
+                        <Alert marginBottom="xs" size="sm" icon={FiMail}>
+                          {maskEmail(certificate?.participant?.email)}
+                        </Alert>
+                      )}
+                      <Alert size="sm" marginBottom="xs" icon={FiCalendar}>
+                        {maskDob(certificate?.participant?.personal_data?.dob)}
+                      </Alert>
+                      <Alert size="sm" icon={FiClock}>
+                        {new Date(
+                          certificate?.participant?.updated_at
+                        ).toLocaleString()}
+                      </Alert>
+                    </main>
+                  </AccordionCard>
+                </div>
+              ))}
             </Row>
             <Alert marginBottom="sm" icon={FiAlertCircle} size="md" type="info">
               Exibindo{' '}
               <b>
-                últimos{' '}
-                {!showAll && certificates.length > 4 ? 4 : certificates.length}{' '}
+                últimos {recentCertificates.length}{' '}
               </b>
               participantes adicionados. Até agora{' '}
               <b>foram adicionados {certificates.length}</b>.
             </Alert>
-            {certificates.length > 4 && (
-              <Button
-                size="small"
-                color="secondary"
-                ghost
-                inline
-                onClick={() => {
-                  setShowAll(oldValue => !oldValue)
-                }}
-                type="button"
-              >
-                {showAll ? (
-                  <>
-                    <FiChevronUp size={20} />
-                    <span>Mostrar menos</span>
-                  </>
-                ) : (
-                  <>
-                    <FiChevronDown size={20} />
-                    <span>Mostrar mais</span>
-                  </>
-                )}
-              </Button>
-            )}
           </>
         )}
       </Section>
