@@ -28,6 +28,7 @@ async function bootstrap() {
   app.use(requestIp.mw())
   app.enableCors({
     // origin: process.env.WEB_URL,
+
     // credentials: true,
     exposedHeaders: ['x-total-count', 'x-total-page']
   })
