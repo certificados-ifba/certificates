@@ -104,7 +104,22 @@ export class CertificatesController {
     @Res({ passthrough: true }) res: Response,
     @Query() query: ListCertificateDto
   ): Promise<ListCertificateResponseDto> {
-    const { search, page, per_page, sort_by, order_by } = query
+    const {
+      search,
+      activity,
+      typeActivity,
+      function: _function,
+      workload_min,
+      workload_max,
+      start_date_from,
+      start_date_to,
+      end_date_from,
+      end_date_to,
+      page,
+      per_page,
+      sort_by,
+      order_by
+    } = query
 
     const eventResponse: IServiceEventGetByIdResponse = await this.eventServiceClient
       .send('event_get_by_id', {
@@ -127,6 +142,15 @@ export class CertificatesController {
     const certificatesResponse: IServiceCertificateListResponse = await this.certificateServiceClient
       .send('certificate_list', {
         name: search,
+        activity,
+        typeActivity,
+        function: _function,
+        workloadMin: workload_min,
+        workloadMax: workload_max,
+        startDateFrom: start_date_from,
+        startDateTo: start_date_to,
+        endDateFrom: end_date_from,
+        endDateTo: end_date_to,
         event: eventResponse.data.event.id,
         page: Number(page),
         perPage: Number(per_page),

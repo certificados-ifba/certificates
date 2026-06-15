@@ -1,38 +1,39 @@
 import {
+  AdvancedFilters,
   AsyncSelect,
+  Accordion,
   Button,
+  Divider,
+  FilterInput,
   Grid,
   Input,
-  Accordion,
-  Divider,
   PaginatedTable,
   TableRow
 } from '@components'
-import { Badge, Group, IconArea } from '@components/select/styles'
+import { Badge, Group } from '@components/select/styles'
 import { IActivity, IEvent, IGeneric, IParticipant } from '@dtos'
+import { useAdvancedFilters } from '@hooks'
 import { useToast } from '@providers'
 import { api, usePaginatedRequest } from '@services'
 import { FormHandles } from '@unform/core'
 import { Form } from '@unform/web'
 import { capitalize, getValidationErrors, maskDob, maskEmail } from '@utils'
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useRef } from 'react'
 import {
   FiAlignCenter,
+  FiAtSign,
   FiBook,
   FiBriefcase,
   FiCalendar,
   FiClock,
+  FiCreditCard,
   FiFileText,
-  FiX,
   FiPlus,
   FiSearch
 } from 'react-icons/fi'
-import { components } from 'react-select'
 import * as Yup from 'yup'
 
-import { InfoOption, TitleOption } from './styles'
-
-const { Section, Footer } = Accordion
+const { Section } = Accordion
 const maskCpf = (cpf: string): string => {
   if (!cpf) return ''
   const clean = cpf.replace(/\D/g, '')
@@ -46,14 +47,19 @@ interface Props {
   onParticipantSaved?: () => void
 }
 
-export const CertificateForm: React.FC<Props> = ({ event, onParticipantSaved }) => {
-  const [filters, setFilters] = useState(null)
+export const CertificateForm: React.FC<Props> = ({
+  event,
+  onParticipantSaved
+}) => {
+  const filtersState = useAdvancedFilters(
+    `event-add-participant-filters:${event?.id}`
+  )
   const { addToast } = useToast()
   const formRef = useRef<FormHandles>(null)
   const participantsRequest = usePaginatedRequest<any, any>({
     url: 'participants',
-    params: filters
-      ? { ...filters, sort_by: 'name', order_by: 'ASC' }
+    params: filtersState.filters
+      ? { ...filtersState.filters, sort_by: 'name', order_by: 'ASC' }
       : { sort_by: 'name', order_by: 'ASC' }
   })
 
@@ -198,21 +204,24 @@ export const CertificateForm: React.FC<Props> = ({ event, onParticipantSaved }) 
     </Group>
   )
 
-  const handleParticipantSearch = useCallback(
-    (event: React.ChangeEvent<HTMLInputElement>) => {
-      const search = event.target.value.trim()
-
-      setFilters(search ? { search } : null)
+  const handleApplyFilters = useCallback(
+    (nextDraft?: Record<string, any>) => {
       participantsRequest.resetPage()
+      filtersState.apply(nextDraft)
     },
-    [participantsRequest]
+    [filtersState, participantsRequest]
   )
 
-  const handleSearchKeyDown = useCallback(
-    (event: React.KeyboardEvent<HTMLInputElement>) => {
-      if (event.key === 'Enter') event.preventDefault()
+  const handleClearFilters = useCallback(() => {
+    participantsRequest.resetPage()
+    filtersState.clear()
+  }, [filtersState, participantsRequest])
+
+  const handleDebouncedFilter = useCallback(
+    (name: string, value: string) => {
+      handleApplyFilters({ ...filtersState.draft, [name]: value })
     },
-    []
+    [filtersState.draft, handleApplyFilters]
   )
 
   return (
@@ -297,13 +306,41 @@ export const CertificateForm: React.FC<Props> = ({ event, onParticipantSaved }) 
         <h2>Quem participou?</h2>
       </header>
       <Section paddingBottom="md">
-        <Input
-          name="search"
-          placeholder="Buscar participante"
-          icon={FiSearch}
-          onChange={handleParticipantSearch}
-          onKeyDown={handleSearchKeyDown}
-        />
+        <AdvancedFilters
+          activeCount={filtersState.activeCount}
+          isLoading={participantsRequest.isValidating}
+          resultsCount={participantsRequest.response?.headers['x-total-count']}
+          onApply={() => handleApplyFilters()}
+          onClear={handleClearFilters}
+        >
+          <FilterInput
+            name="search"
+            placeholder="Buscar por nome"
+            label="Nome"
+            icon={FiSearch}
+            value={filtersState.draft.search}
+            onChangeValue={filtersState.setField}
+            onDebouncedChange={handleDebouncedFilter}
+          />
+          <FilterInput
+            name="cpf"
+            placeholder="Buscar por CPF"
+            label="CPF"
+            icon={FiCreditCard}
+            value={filtersState.draft.cpf}
+            onChangeValue={filtersState.setField}
+            onDebouncedChange={handleDebouncedFilter}
+          />
+          <FilterInput
+            name="email"
+            placeholder="Buscar por e-mail"
+            label="E-mail"
+            icon={FiAtSign}
+            value={filtersState.draft.email}
+            onChangeValue={filtersState.setField}
+            onDebouncedChange={handleDebouncedFilter}
+          />
+        </AdvancedFilters>
         <PaginatedTable request={participantsRequest}>
           <thead>
             <tr>
