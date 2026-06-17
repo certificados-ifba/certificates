@@ -214,14 +214,14 @@ const AddCertificate: React.FC<Props> = ({
         }
 
         if (edit && modelData?.id) {
-          await api.put(`events/${eventId}/models/${modelData.id}`, payload)
+          await api.put(`tipos-certificado/${eventId}/models/${modelData.id}`, payload)
           addToast({
             type: 'success',
             title: 'Modelo atualizado',
             description: 'O modelo de certificado foi atualizado com sucesso.'
           })
         } else {
-          await api.post(`events/${eventId}/models`, payload)
+          await api.post(`tipos-certificado/${eventId}/models`, payload)
           addToast({
             type: 'success',
             title: 'Modelo adicionado',

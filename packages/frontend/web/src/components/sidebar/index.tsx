@@ -40,9 +40,9 @@ export const Sidebar: React.FC = () => {
         },
         {
           name: 'Eventos',
-          link: '/events',
+          link: '/tipos-certificado',
           icon: FiCalendar,
-          activeLinks: ['/events', '/events/[tab]/[id]']
+          activeLinks: ['/tipos-certificado', '/tipos-certificado/[tab]/[id]']
         },
         {
           name: 'Participantes',

@@ -20,7 +20,7 @@ export class ConfigService {
       },
       transport: Transport.TCP
     }
-    this.envConfig.eventService = {
+    this.envConfig.tipoCertificadoService = {
       options: {
         port: process.env.EVENT_SERVICE_PORT,
         host: process.env.EVENT_SERVICE_HOST

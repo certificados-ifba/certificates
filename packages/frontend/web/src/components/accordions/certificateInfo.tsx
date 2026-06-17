@@ -30,7 +30,7 @@ const CertificateInfo: React.FC<Props> = ({ eventId, certificate }) => {
       console.log(certificate)
 
       if (!certificate.id) throw 'Erro não identificado'
-      await api.delete(`events/${eventId}/certificates/${certificate.id}`)
+      await api.delete(`tipos-certificado/${eventId}/certificates/${certificate.id}`)
       handleRemove(certificate)
       addToast({
         type: 'success',
@@ -50,7 +50,7 @@ const CertificateInfo: React.FC<Props> = ({ eventId, certificate }) => {
     async function load() {
       try {
         setLoading(true)
-        const { data } = await api.post(`events/${eventId}/certificates`, {
+        const { data } = await api.post(`tipos-certificado/${eventId}/certificates`, {
           activity: certificate.activity,
           function: certificate.function,
           participant: certificate.participant.id,

@@ -1,14 +1,14 @@
 import { useCallback, useState } from 'react'
 
 import ICertificate from '../../dtos/ICertificate'
-import { IEvent } from '../../dtos/IEvent'
+import { ITipoCertificado } from '../../dtos/ITipoCertificado'
 import { Row } from '../../styles/components/grid'
 import { Container } from '../../styles/components/tabs/eventCertificate'
 import AddCertificate from '../accordions/addCertificate'
 import CertificatePreview from '../accordions/certificatePreview'
 
 interface Props {
-  event: IEvent
+  event: ITipoCertificado
 }
 
 const EventCertificate: React.FC<Props> = ({ event }) => {

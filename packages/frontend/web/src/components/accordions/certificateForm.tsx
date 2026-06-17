@@ -22,7 +22,7 @@ import { components } from 'react-select'
 import * as Yup from 'yup'
 
 import { IActivity } from '../../dtos/IActivity'
-import { IEvent } from '../../dtos/IEvent'
+import { ITipoCertificado } from '../../dtos/ITipoCertificado'
 import { IGeneric } from '../../dtos/IGeneric'
 import { IParticipant } from '../../dtos/IParticipant'
 import { useCertificates } from '../../providers/certificates'
@@ -46,7 +46,7 @@ import { Input } from '../input'
 import CertificateInfo from './certificateInfo'
 
 interface Props {
-  event: IEvent
+  event: ITipoCertificado
   closeAccordion: () => void
 }
 
@@ -154,7 +154,7 @@ const CertificateForm: React.FC<Props> = ({ event, closeAccordion }) => {
   const loadActivities = useCallback(
     async search => {
       const response = await api.get<{ data: IActivity[] }>(
-        `events/${event?.id}/activities`,
+        `tipos-certificado/${event?.id}/activities`,
         {
           params: { search, sort_by: 'name', order_by: 'ASC' }
         }

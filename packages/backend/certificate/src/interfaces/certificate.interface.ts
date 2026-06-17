@@ -1,7 +1,7 @@
 import { Document, Types } from 'mongoose'
 
 import { IActivity } from './activity.interface'
-import { IEvent } from './event.interface'
+import { ITipoCertificado } from './tipo-certificado.interface'
 import { IGeneric } from './generic.interface'
 import { IParticipant } from './participant.interface'
 
@@ -9,7 +9,7 @@ export interface ICertificate extends Document {
   activity: IActivity
   function: IGeneric
   participant: IParticipant
-  event: IEvent
+  event: ITipoCertificado
   workload: number
   start_date: Date
   end_date: Date

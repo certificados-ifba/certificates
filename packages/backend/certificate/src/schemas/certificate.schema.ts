@@ -26,8 +26,8 @@ export const CertificateSchema = new mongoose.Schema(
     },
     event: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'Event',
-      required: [true, 'Event can not be empty']
+      ref: 'TipoCertificado',
+      required: [true, 'TipoCertificado can not be empty']
     },
     key: {
       type: String,

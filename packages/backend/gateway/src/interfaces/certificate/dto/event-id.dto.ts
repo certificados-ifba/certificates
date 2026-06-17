@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger'
 
-export class EventIdDto {
+export class TipoCertificadoIdDto {
   @ApiProperty()
   event_id: string
 }

@@ -36,7 +36,7 @@ export const ModelList: React.FC<IModelListProps> = ({ eventId }) => {
     const loadModels = async () => {
         try {
             setLoading(true)
-            const response = await api.get(`/events/${eventId}/models`)
+            const response = await api.get(`/tipos-certificado/${eventId}/models`)
             setModels(response.data.data || [])
         } catch (error) {
             addToast({
@@ -53,7 +53,7 @@ export const ModelList: React.FC<IModelListProps> = ({ eventId }) => {
         if (!confirm('Deseja realmente excluir este modelo?')) return
 
         try {
-            await api.delete(`/events/${eventId}/models/${modelId}`)
+            await api.delete(`/tipos-certificado/${eventId}/models/${modelId}`)
             addToast({
                 title: 'Modelo excluído com sucesso',
                 type: 'success'

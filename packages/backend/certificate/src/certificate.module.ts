@@ -5,7 +5,7 @@ import { CertificateController } from './controllers/certificate.controller'
 import { ModelController } from './controllers/model.controller'
 import { ActivitySchema } from './schemas/activity.schema'
 import { CertificateSchema } from './schemas/certificate.schema'
-import { EventSchema } from './schemas/event.schema'
+import { TipoCertificadoSchema } from './schemas/tipo-certificado.schema'
 import { GenericSchema } from './schemas/generic.schema'
 import { ModelSchema } from './schemas/model.schema'
 import { UserSchema } from './schemas/user.schema'
@@ -40,8 +40,8 @@ import { ModelService } from './services/model.service'
         schema: UserSchema
       },
       {
-        name: 'Event',
-        schema: EventSchema
+        name: 'TipoCertificado',
+        schema: TipoCertificadoSchema
       }
     ])
   ],

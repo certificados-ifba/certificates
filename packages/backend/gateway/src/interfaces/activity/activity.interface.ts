@@ -1,4 +1,4 @@
-import { IEvent } from '../event/event.interface'
+import { ITipoCertificado } from '../tipo-certificado/tipo-certificado.interface'
 import { IGeneric } from '../generic/generic.interface'
 
 export interface IActivity {
@@ -7,6 +7,6 @@ export interface IActivity {
   workload: number
   start_date: Date
   end_date: Date
-  event: IEvent
+  event: ITipoCertificado
   type: IGeneric
 }

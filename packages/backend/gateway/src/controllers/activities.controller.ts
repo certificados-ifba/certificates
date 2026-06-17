@@ -28,7 +28,7 @@ import { ActivityIdDto } from '../interfaces/activity/dto/activity-id.dto'
 import { CreateActivityResponseDto } from '../interfaces/activity/dto/create-activity-response.dto'
 import { CreateActivityDto } from '../interfaces/activity/dto/create-activity.dto'
 import { DeleteActivityResponseDto } from '../interfaces/activity/dto/delete-activity-response.dto'
-import { EventIdDto } from '../interfaces/activity/dto/event-id.dto'
+import { TipoCertificadoIdDto } from '../interfaces/activity/dto/event-id.dto'
 import { ListActivityResponseDto } from '../interfaces/activity/dto/list-activity-response.dto'
 import { ListActivityDto } from '../interfaces/activity/dto/list-activity.dto'
 import { UpdateActivityResponseDto } from '../interfaces/activity/dto/update-activity-response.dto'
@@ -38,7 +38,7 @@ import { IServiceActivityDeleteResponse } from '../interfaces/activity/service-a
 import { IServiceActivityListResponse } from '../interfaces/activity/service-activity-list-response.interface'
 import { IServiceActivityUpdateByIdResponse } from '../interfaces/activity/service-activity-update-by-id-response.interface'
 import { IAuthorizedRequest } from '../interfaces/common/authorized-request.interface'
-import { IServiceEventGetByIdResponse } from '../interfaces/event/service-event-get-by-id-response.interface'
+import { IServiceTipoCertificadoGetByIdResponse } from '../interfaces/tipo-certificado/service-tipo-certificado-get-by-id-response.interface'
 import capitalize from '../utils/capitalize'
 
 // import { ActivityIdDto } from '../interfaces/activity/dto/activity-id.dto'
@@ -58,7 +58,7 @@ export class ActivitiesController {
   constructor(
     @Inject('ACTIVITY_SERVICE')
     private readonly activityServiceClient: ClientProxy,
-    @Inject('EVENT_SERVICE')
+    @Inject('TIPO_CERTIFICADO_SERVICE')
     private readonly eventServiceClient: ClientProxy
   ) {}
 
@@ -94,14 +94,14 @@ export class ActivitiesController {
   })
   public async getActivities(
     @Req() request: IAuthorizedRequest,
-    @Param() params: EventIdDto,
+    @Param() params: TipoCertificadoIdDto,
     @Res({ passthrough: true }) res: Response,
     @Query() query: ListActivityDto
   ): Promise<ListActivityResponseDto> {
     const { search, page, per_page, sort_by, order_by } = query
 
-    const eventResponse: IServiceEventGetByIdResponse = await this.eventServiceClient
-      .send('event_get_by_id', {
+    const eventResponse: IServiceTipoCertificadoGetByIdResponse = await this.eventServiceClient
+      .send('tipo_certificado_get_by_id', {
         id: params.event_id,
         user: request.user
       })
@@ -150,8 +150,8 @@ export class ActivitiesController {
     @Body() activityRequest: CreateActivityDto
   ): Promise<CreateActivityResponseDto> {
     const { name, workload, start_date, end_date, type } = activityRequest
-    const eventResponse: IServiceEventGetByIdResponse = await this.eventServiceClient
-      .send('event_get_by_id', {
+    const eventResponse: IServiceTipoCertificadoGetByIdResponse = await this.eventServiceClient
+      .send('tipo_certificado_get_by_id', {
         id: params.event_id,
         user: request.user
       })
@@ -211,8 +211,8 @@ export class ActivitiesController {
   ): Promise<DeleteActivityResponseDto> {
     const userInfo = request.user
 
-    const eventResponse: IServiceEventGetByIdResponse = await this.eventServiceClient
-      .send('event_get_by_id', {
+    const eventResponse: IServiceTipoCertificadoGetByIdResponse = await this.eventServiceClient
+      .send('tipo_certificado_get_by_id', {
         id: params.event_id,
         user: request.user
       })

@@ -1,5 +1,5 @@
 import { IActivity } from '../activity/activity.interface'
-import { IEvent } from '../event/event.interface'
+import { ITipoCertificado } from '../tipo-certificado/tipo-certificado.interface'
 import { IGeneric } from '../generic/generic.interface'
 import { IParticipant } from '../participant/participant.interface'
 
@@ -8,7 +8,7 @@ export interface ICertificate {
   activity?: IActivity
   function?: IGeneric
   participant?: IParticipant
-  event?: IEvent
+  event?: ITipoCertificado
   key?: string
   workload: number
   start_date: Date

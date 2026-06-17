@@ -12,7 +12,7 @@ import {
 } from 'react-icons/fi'
 
 import { IActivity } from '../../dtos/IActivity'
-import { IEvent } from '../../dtos/IEvent'
+import { ITipoCertificado } from '../../dtos/ITipoCertificado'
 import { IGeneric } from '../../dtos/IGeneric'
 import { IParticipant } from '../../dtos/IParticipant'
 import { useToast } from '../../providers/toast'
@@ -28,7 +28,7 @@ import { DeleteModal } from '../modals/deleteModal'
 import { PaginatedTable } from '../paginatedTable'
 
 interface Props {
-  event: IEvent
+  event: ITipoCertificado
   openAccordion: () => void
 }
 interface ICertificate {
@@ -36,7 +36,7 @@ interface ICertificate {
   activity: IActivity
   function: IGeneric
   participant: IParticipant
-  event: IEvent
+  event: ITipoCertificado
   key: string
   workload: number
   start_date: Date
@@ -63,7 +63,7 @@ const CertificateList: React.FC<Props> = ({ event, openAccordion }) => {
   const { addToast } = useToast()
 
   const request = usePaginatedRequest<IRequest>({
-    url: `events/${event?.id}/certificates`,
+    url: `tipos-certificado/${event?.id}/certificates`,
     params:
       filters && order !== ''
         ? Object.assign(filters, { sort_by: column, order_by: order })
@@ -102,7 +102,7 @@ const CertificateList: React.FC<Props> = ({ event, openAccordion }) => {
 
   const handleSubmitDelete = useCallback(async () => {
     try {
-      await api.delete(`events/${event?.id}/certificates/${id}`)
+      await api.delete(`tipos-certificado/${event?.id}/certificates/${id}`)
       addToast({
         title: 'Certificado excluído',
         type: 'success',
@@ -139,7 +139,7 @@ const CertificateList: React.FC<Props> = ({ event, openAccordion }) => {
           color="info"
           size="small"
           onClick={() => {
-            router.push(`/import/events/certificates/${event?.id}`)
+            router.push(`/import/tipos-certificado/certificates/${event?.id}`)
           }}
         >
           <FiFilePlus size={20} />

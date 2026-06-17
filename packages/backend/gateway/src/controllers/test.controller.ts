@@ -3,13 +3,13 @@ import { ClientProxy } from '@nestjs/microservices'
 import { ApiTags, ApiOkResponse } from '@nestjs/swagger'
 import { Response } from 'express'
 
-import { GetEventsResponseDto } from '../interfaces/event/dto/get-events-response.dto'
+import { GetTiposCertificadoResponseDto } from '../interfaces/tipo-certificado/dto/get-tipos-certificado-response.dto'
 
 @Controller('test')
 @ApiTags('test')
-export class TestEventsController {
+export class TestTiposCertificadoController {
   constructor(
-    @Inject('EVENT_SERVICE') private readonly eventServiceClient: ClientProxy
+    @Inject('TIPO_CERTIFICADO_SERVICE') private readonly eventServiceClient: ClientProxy
   ) {}
 
   @Post('import')
@@ -91,7 +91,7 @@ export class TestEventsController {
 
   @Get('participants')
   @ApiOkResponse({
-    type: GetEventsResponseDto,
+    type: GetTiposCertificadoResponseDto,
     description: 'List of participants'
   })
   public async getParticipants(): Promise<any> {
@@ -131,7 +131,7 @@ export class TestEventsController {
 
   @Get('users')
   @ApiOkResponse({
-    type: GetEventsResponseDto,
+    type: GetTiposCertificadoResponseDto,
     description: 'List of participants'
   })
   public async getUsers(): Promise<any> {
@@ -162,7 +162,7 @@ export class TestEventsController {
 
   @Get('functions')
   @ApiOkResponse({
-    type: GetEventsResponseDto,
+    type: GetTiposCertificadoResponseDto,
     description: 'List of functions'
   })
   public async getFunctions(): Promise<any> {
