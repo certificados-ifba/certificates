@@ -5,7 +5,8 @@ import {
   FiSettings,
   FiBriefcase,
   FiFileText,
-  FiAlignCenter
+  FiAlignCenter,
+  FiTag
 } from 'react-icons/fi'
 
 import { Generic, TextConfig } from './components'
@@ -54,6 +55,20 @@ const Settings: React.FC = () => {
             icon: FiAlignCenter,
             children: <TextConfig />,
             path: 'default-text'
+          },
+          {
+            name: 'Tipos de Certificação',
+            icon: FiTag,
+            children: (
+              <Generic
+                icon={FiTag}
+                name="Tipo de Certificação"
+                plural="Tipos de Certificação"
+                url="/certification_types"
+                showIconPicker
+              />
+            ),
+            path: 'certification-type'
           }
         ]}
       />

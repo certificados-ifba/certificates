@@ -1,55 +1,13 @@
 import { Button, FooterModal, HeaderModal, MainModal, Modal, ScrollWrapper } from '@components'
-import { useCallback } from 'react'
-import {
-  FiAward,
-  FiBriefcase,
-  FiCalendar,
-  FiClipboard,
-  FiCode,
-  FiCompass,
-  FiEye,
-  FiFlag,
-  FiGlobe,
-  FiBook,
-  FiBookOpen,
-  FiLayout,
-  FiMessageCircle,
-  FiMessageSquare,
-  FiMic,
-  FiRefreshCw,
-  FiTarget,
-  FiTerminal,
-  FiUserCheck,
-  FiUsers,
-  FiX,
-  FiZap
-} from 'react-icons/fi'
+import { IGeneric } from '@dtos'
+import { api } from '@services'
+import { useCallback, useEffect, useState } from 'react'
+import { FiCalendar, FiX } from 'react-icons/fi'
 import styled from 'styled-components'
 
-export const TIPOS_CERTIFICADO = [
-  'Evento',
-  'Palestra',
-  'Minicurso',
-  'Curso',
-  'Treinamento',
-  'Capacitação',
-  'Bootcamp',
-  'Congresso',
-  'Seminário',
-  'Simpósio',
-  'Colóquio',
-  'Jornada Acadêmica',
-  'Semana Acadêmica',
-  'Mesa Redonda',
-  'Painel',
-  'Debate',
-  'Visita Técnica',
-  'Monitoria',
-  'Estágio',
-  'Hackathon',
-  'Maratona de Programação'
-] as const
-export type TipoCertificado = typeof TIPOS_CERTIFICADO[number]
+import { getIcon } from './iconMap'
+
+export type TipoCertificado = string
 
 interface Props {
   openModal: boolean
@@ -79,29 +37,29 @@ const TipoCard = styled.button`
   justify-content: center;
   gap: 0.5rem;
   padding: 1.1rem 0.75rem;
-  border: 2px solid ${({ theme }) => theme.colors?.border || '#e5e5e5'};
+  border: 2px solid ${({ theme }) => theme.colors.mediumTint};
   border-radius: 8px;
-  background: ${({ theme }) => theme.colors?.cardBackground || '#fff'};
+  background: ${({ theme }) => theme.colors.lightTint};
   cursor: pointer;
   transition: border-color 0.2s, background 0.2s, transform 0.1s;
   font-family: inherit;
   text-align: center;
 
   svg {
-    color: ${({ theme }) => theme.colors?.primary || '#4f46e5'};
+    color: ${({ theme }) => theme.colors.primary};
     flex-shrink: 0;
   }
 
   span {
     font-size: 0.78rem;
     font-weight: 600;
-    color: ${({ theme }) => theme.colors?.text || '#333'};
+    color: ${({ theme }) => theme.colors.dark};
     line-height: 1.2;
   }
 
   &:hover {
-    border-color: ${({ theme }) => theme.colors?.primary || '#4f46e5'};
-    background: ${({ theme }) => theme.colors?.primaryLight || '#f5f3ff'};
+    border-color: ${({ theme }) => theme.colors.primary};
+    background: ${({ theme }) => theme.colors.lightShade};
     transform: translateY(-2px);
   }
 
@@ -110,37 +68,31 @@ const TipoCard = styled.button`
   }
 `
 
-const TIPO_CONFIG: Record<TipoCertificado, { icon: React.ReactElement }> = {
-  'Evento':               { icon: <FiCalendar size={24} /> },
-  'Palestra':             { icon: <FiMic size={24} /> },
-  'Minicurso':            { icon: <FiBookOpen size={24} /> },
-  'Curso':                { icon: <FiBook size={24} /> },
-  'Treinamento':          { icon: <FiTarget size={24} /> },
-  'Capacitação':          { icon: <FiAward size={24} /> },
-  'Bootcamp':             { icon: <FiCode size={24} /> },
-  'Congresso':            { icon: <FiUsers size={24} /> },
-  'Seminário':            { icon: <FiClipboard size={24} /> },
-  'Simpósio':             { icon: <FiGlobe size={24} /> },
-  'Colóquio':             { icon: <FiMessageCircle size={24} /> },
-  'Jornada Acadêmica':    { icon: <FiCompass size={24} /> },
-  'Semana Acadêmica':     { icon: <FiFlag size={24} /> },
-  'Mesa Redonda':         { icon: <FiRefreshCw size={24} /> },
-  'Painel':               { icon: <FiLayout size={24} /> },
-  'Debate':               { icon: <FiMessageSquare size={24} /> },
-  'Visita Técnica':       { icon: <FiEye size={24} /> },
-  'Monitoria':            { icon: <FiUserCheck size={24} /> },
-  'Estágio':              { icon: <FiBriefcase size={24} /> },
-  'Hackathon':            { icon: <FiZap size={24} /> },
-  'Maratona de Programação': { icon: <FiTerminal size={24} /> },
-}
+const EmptyMessage = styled.p`
+  text-align: center;
+  color: ${({ theme }) => theme.colors.darkTint};
+  padding: 2rem 0;
+`
 
 export const TipoSelectorModal: React.FC<Props> = ({
   openModal,
   onClose,
   onSelect
 }) => {
+  const [tipos, setTipos] = useState<IGeneric[]>([])
+  const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    if (!openModal) return
+    setLoading(true)
+    api
+      .get('/certification_types', { params: { per_page: 100, page: 1, sort_by: 'name', order_by: 'ASC' } })
+      .then(res => setTipos(res.data?.data ?? []))
+      .finally(() => setLoading(false))
+  }, [openModal])
+
   const handleSelect = useCallback(
-    (tipo: TipoCertificado) => {
+    (tipo: string) => {
       onSelect(tipo)
     },
     [onSelect]
@@ -156,14 +108,25 @@ export const TipoSelectorModal: React.FC<Props> = ({
       </HeaderModal>
       <ScrollWrapper>
         <MainModal>
-          <TiposGrid>
-            {TIPOS_CERTIFICADO.map(tipo => (
-              <TipoCard key={tipo} type="button" onClick={() => handleSelect(tipo)}>
-                {TIPO_CONFIG[tipo].icon}
-                <span>{tipo}</span>
-              </TipoCard>
-            ))}
-          </TiposGrid>
+          {loading ? (
+            <EmptyMessage>Carregando tipos...</EmptyMessage>
+          ) : tipos.length === 0 ? (
+            <EmptyMessage>
+              Nenhum tipo de certificação cadastrado. Acesse Configurações &gt; Tipos de Certificação para adicionar.
+            </EmptyMessage>
+          ) : (
+            <TiposGrid>
+              {tipos.map(tipo => {
+                const TipoIcon = getIcon(tipo.icon)
+                return (
+                  <TipoCard key={tipo.id} type="button" onClick={() => handleSelect(tipo.name)}>
+                    <TipoIcon size={24} />
+                    <span>{tipo.name}</span>
+                  </TipoCard>
+                )
+              })}
+            </TiposGrid>
+          )}
         </MainModal>
       </ScrollWrapper>
       <FooterModal inline>
@@ -175,3 +138,4 @@ export const TipoSelectorModal: React.FC<Props> = ({
     </Modal>
   )
 }
+

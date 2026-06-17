@@ -40,13 +40,6 @@ export const TipoCertificadoSchema = new mongoose.Schema(
     },
     tipo: {
       type: String,
-      enum: [
-        'Evento', 'Palestra', 'Minicurso', 'Curso', 'Treinamento',
-        'Capacitação', 'Bootcamp', 'Congresso', 'Seminário', 'Simpósio',
-        'Colóquio', 'Jornada Acadêmica', 'Semana Acadêmica', 'Mesa Redonda',
-        'Painel', 'Debate', 'Visita Técnica', 'Monitoria', 'Estágio',
-        'Hackathon', 'Maratona de Programação'
-      ],
       required: [true, 'Tipo can not be empty']
     },
     status: {

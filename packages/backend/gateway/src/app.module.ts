@@ -5,6 +5,7 @@ import { TerminusModule } from '@nestjs/terminus'
 
 import { ActivitiesController } from './controllers/activities.controller'
 import { ActivityTypesController } from './controllers/activity-types.controller'
+import { CertificationTypesController } from './controllers/certification-types.controller'
 import { CertificatesController } from './controllers/certificates.controller'
 import { TiposCertificadoController } from './controllers/tipos-certificado.controller'
 import { FunctionsController } from './controllers/functions.controller'
@@ -32,6 +33,7 @@ import { PermissionGuard } from './services/guards/permission.guard'
   controllers: [
     ActivitiesController,
     ActivityTypesController,
+    CertificationTypesController,
     CertificatesController,
     TiposCertificadoController,
     FunctionsController,
