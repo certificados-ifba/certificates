@@ -1,5 +1,5 @@
 import Select from 'react-select'
-import AsyncSelect from 'react-select/async'
+import AsyncCreatableSelect from 'react-select/async-creatable'
 import styled, { css } from 'styled-components'
 
 interface Props {
@@ -70,7 +70,7 @@ export const ReactSelect = styled(Select)`
   }
 `
 
-export const AsyncReactSelect = styled(AsyncSelect)`
+export const AsyncReactSelect = styled(AsyncCreatableSelect)`
   .react-select__control {
     cursor: pointer;
     font-size: 0.875rem;

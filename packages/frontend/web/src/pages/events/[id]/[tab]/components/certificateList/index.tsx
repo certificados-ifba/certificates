@@ -4,6 +4,7 @@ import {
   Button,
   Column,
   DeleteModal,
+  AsyncSelect,
   FilterInput,
   PaginatedTable,
   TableRow
@@ -14,7 +15,7 @@ import { useToast } from '@providers'
 import { api, usePaginatedRequest } from '@services'
 import { capitalize } from '@utils'
 import { useRouter } from 'next/router'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import {
   FiActivity,
   FiBook,
@@ -190,9 +191,6 @@ export const CertificateList: React.FC<Props> = ({ event, openAccordion }) => {
   const [order, setOrder] = useState<'' | 'ASC' | 'DESC'>('DESC')
   const [openDeleteModal, setOpenDeleteModal] = useState(false)
   const [id, setId] = useState('')
-  const [activityOptions, setActivityOptions] = useState<
-    Array<{ label: string; value: string }>
-  >([])
 
   const { addToast } = useToast()
 
@@ -219,33 +217,27 @@ export const CertificateList: React.FC<Props> = ({ event, openAccordion }) => {
 
   const resultCount = request.response?.headers['x-total-count']
 
-  useEffect(() => {
-    const loadActivityOptions = async () => {
-      if (!event?.id) return
+  const loadFunctions = useCallback(async search => {
+    const response = await api.get<{ data: IGeneric[] }>('/functions', {
+      params: { search, sort_by: 'name', order_by: 'ASC' }
+    })
 
-      try {
-        const response = await api.get<{ data: IActivity[] }>(
-          `events/${event.id}/activities`,
-          { params: { sort_by: 'name', order_by: 'ASC' } }
-        )
+    return (response.data?.data || []).map(_function => ({
+      value: _function.id,
+      label: capitalize(_function.name)
+    }))
+  }, [])
 
-        setActivityOptions(
-          (response.data?.data || []).map(activity => ({
-            label: activity.name,
-            value: activity.id
-          }))
-        )
-      } catch (err) {
-        addToast({
-          type: 'error',
-          title: 'Erro ao carregar atividades',
-          description: err
-        })
-      }
-    }
+  const loadTypeActivities = useCallback(async search => {
+    const response = await api.get<{ data: IGeneric[] }>('/activity_types', {
+      params: { search, sort_by: 'name', order_by: 'ASC' }
+    })
 
-    loadActivityOptions()
-  }, [addToast, event?.id])
+    return (response.data?.data || []).map(typeActivity => ({
+      value: typeActivity.id,
+      label: capitalize(typeActivity.name)
+    }))
+  }, [])
 
   const handleApplyFilters = useCallback(
     (nextDraft?: Record<string, any>) => {
@@ -265,6 +257,16 @@ export const CertificateList: React.FC<Props> = ({ event, openAccordion }) => {
       handleApplyFilters({ ...filtersState.draft, [name]: value })
     },
     [filtersState.draft, handleApplyFilters]
+  )
+
+  const handleSelectAsyncFilter = useCallback(
+    (name: string) => (data: { label: string; value: string } | null) => {
+      const value = data?.label ? String(data.label) : ''
+
+      filtersState.setField(name, value)
+      handleApplyFilters({ ...filtersState.draft, [name]: value })
+    },
+    [filtersState, handleApplyFilters]
   )
 
   const handleOrder = useCallback(
@@ -414,23 +416,43 @@ export const CertificateList: React.FC<Props> = ({ event, openAccordion }) => {
           onChangeValue={filtersState.setField}
           onDebouncedChange={handleDebouncedFilter}
         />
-        <FilterInput
+        <AsyncSelect
           name="typeActivity"
-          placeholder="Filtrar por tipo de atividade"
           label="Tipo de Atividade"
           icon={FiBookOpen}
-          value={filtersState.draft.typeActivity}
-          onChangeValue={filtersState.setField}
-          onDebouncedChange={handleDebouncedFilter}
+          placeholder="Filtrar por tipo de atividade"
+          value={
+            filtersState.draft.typeActivity
+              ? {
+                  label: String(filtersState.draft.typeActivity),
+                  value: String(filtersState.draft.typeActivity)
+                }
+              : null
+          }
+          loadOptions={loadTypeActivities}
+          handleOnSelect={handleSelectAsyncFilter('typeActivity')}
+          isCreatable
+          allowCreateWhileLoading
+          formatCreateLabel={text => `Usar "${text}"`}
         />
-        <FilterInput
+        <AsyncSelect
           name="function"
-          placeholder="Filtrar por função"
           label="Função"
           icon={FiBriefcase}
-          value={filtersState.draft.function}
-          onChangeValue={filtersState.setField}
-          onDebouncedChange={handleDebouncedFilter}
+          placeholder="Filtrar por função"
+          value={
+            filtersState.draft.function
+              ? {
+                  label: String(filtersState.draft.function),
+                  value: String(filtersState.draft.function)
+                }
+              : null
+          }
+          loadOptions={loadFunctions}
+          handleOnSelect={handleSelectAsyncFilter('function')}
+          isCreatable
+          allowCreateWhileLoading
+          formatCreateLabel={text => `Usar "${text}"`}
         />
       </AdvancedFilters>
       <PaginatedTable request={request}>
@@ -454,22 +476,13 @@ export const CertificateList: React.FC<Props> = ({ event, openAccordion }) => {
         </thead>
         <tbody>
           {request.data?.data?.map(cert => {
-            const {
-              id,
-              activity = { name: '' },
-              participant = null,
-              function: fn = { name: '' },
-              workload,
-              start_date,
-              end_date,
-              created_at
-            } = cert
+            const { id, participant = null, workload, start_date, end_date, created_at } = cert
 
-            const activityName = activity?.name || ''
-            const activityTypeName = activity?.type?.name || ''
+            const activityName = cert.activity?.name || ''
+            const activityTypeName = cert.activity?.type?.name || ''
             const participantName = participant?.name || ''
             const cpf = participant?.personal_data?.cpf || ''
-            const functionName = fn?.name || ''
+            const functionName = cert.function?.name || ''
 
             return (
               <tr key={id}>
