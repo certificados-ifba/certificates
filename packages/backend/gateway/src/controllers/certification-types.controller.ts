@@ -28,15 +28,17 @@ import { CreateCertificationTypeDto } from '../interfaces/certification-type/dto
 import { GetCertificationTypeByIdResponseDto } from '../interfaces/certification-type/dto/get-certification-type-by-id-response.dto'
 import { ListCertificationTypeResponseDto } from '../interfaces/certification-type/dto/list-certification-type-response.dto'
 import { UpdateCertificationTypeResponseDto } from '../interfaces/certification-type/dto/update-certification-type-response.dto'
+import {
+  IServiceCertificationTypeCreateResponse,
+  IServiceCertificationTypeDeleteResponse,
+  IServiceCertificationTypeGetByIdResponse,
+  IServiceCertificationTypeListResponse,
+  IServiceCertificationTypeUpdateResponse
+} from '../interfaces/certification-type/service-certification-type-responses.interface'
 import { DeleteGenericResponseDto } from '../interfaces/generic/dto/delete-generic-response.dto'
 import { GenericIdDto } from '../interfaces/generic/dto/generic-id.dto'
 import { ListGenericDto } from '../interfaces/generic/dto/list-generic.dto'
 import { UpdateGenericDto } from '../interfaces/generic/dto/update-generic.dto'
-import { IServiceGenericCreateResponse } from '../interfaces/generic/service-generic-create-response.interface'
-import { IServiceGenericDeleteResponse } from '../interfaces/generic/service-generic-delete-response.interface'
-import { IServiceGenericGetByIdResponse } from '../interfaces/generic/service-generic-get-by-id-response.interface'
-import { IServiceGenericListResponse } from '../interfaces/generic/service-generic-list-response.interface'
-import { IServiceGenericUpdateByIdResponse } from '../interfaces/generic/service-generic-update-by-id-response.interface'
 
 @Controller('certification_types')
 @ApiBearerAuth('JWT')
@@ -59,9 +61,8 @@ export class CertificationTypesController {
     @Query() query: ListGenericDto
   ): Promise<ListCertificationTypeResponseDto> {
     const { search, page, per_page, sort_by, order_by } = query
-    const response: IServiceGenericListResponse = await this.genericServiceClient
-      .send('generic_list', {
-        type: 'certification',
+    const response: IServiceCertificationTypeListResponse = await this.genericServiceClient
+      .send('certification_type_list', {
         name: search,
         page: Number(page),
         perPage: Number(per_page),
@@ -75,7 +76,7 @@ export class CertificationTypesController {
 
     return {
       message: response.message,
-      data: response?.data?.generics
+      data: response?.data?.certificationTypes
     }
   }
 
@@ -89,9 +90,8 @@ export class CertificationTypesController {
   public async createCertificationType(
     @Body() genericRequest: CreateCertificationTypeDto
   ): Promise<CreateCertificationTypeResponseDto> {
-    const createResponse: IServiceGenericCreateResponse = await this.genericServiceClient
-      .send('generic_create', {
-        type: 'certification',
+    const createResponse: IServiceCertificationTypeCreateResponse = await this.genericServiceClient
+      .send('certification_type_create', {
         name: genericRequest.name,
         icon: genericRequest.icon
       })
@@ -110,7 +110,7 @@ export class CertificationTypesController {
 
     return {
       message: createResponse.message,
-      data: createResponse.generic,
+      data: createResponse.certificationType,
       errors: null
     }
   }
@@ -127,13 +127,13 @@ export class CertificationTypesController {
   ): Promise<GetCertificationTypeByIdResponseDto> {
     const { id } = params
 
-    const response: IServiceGenericGetByIdResponse = await this.genericServiceClient
-      .send('generic_get_by_id', id)
+    const response: IServiceCertificationTypeGetByIdResponse = await this.genericServiceClient
+      .send('certification_type_get_by_id', id)
       .toPromise()
 
     return {
       message: response.message,
-      data: response.generic
+      data: response.certificationType
     }
   }
 
@@ -146,8 +146,8 @@ export class CertificationTypesController {
   public async deleteCertificationType(
     @Param() params: GenericIdDto
   ): Promise<DeleteGenericResponseDto> {
-    const deleteResponse: IServiceGenericDeleteResponse = await this.genericServiceClient
-      .send('generic_delete_by_id', {
+    const deleteResponse: IServiceCertificationTypeDeleteResponse = await this.genericServiceClient
+      .send('certification_type_delete_by_id', {
         id: params.id
       })
       .toPromise()
@@ -180,10 +180,10 @@ export class CertificationTypesController {
     @Param() params: GenericIdDto,
     @Body() genericRequest: UpdateGenericDto
   ): Promise<UpdateCertificationTypeResponseDto> {
-    const updateResponse: IServiceGenericUpdateByIdResponse = await this.genericServiceClient
-      .send('generic_update_by_id', {
+    const updateResponse: IServiceCertificationTypeUpdateResponse = await this.genericServiceClient
+      .send('certification_type_update_by_id', {
         id: params.id,
-        generic: {
+        certificationType: {
           name: genericRequest.name,
           icon: genericRequest.icon
         }
@@ -203,7 +203,7 @@ export class CertificationTypesController {
 
     return {
       message: updateResponse.message,
-      data: updateResponse.generic,
+      data: updateResponse.certificationType,
       errors: null
     }
   }
