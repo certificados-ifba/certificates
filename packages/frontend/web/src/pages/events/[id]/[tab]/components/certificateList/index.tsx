@@ -13,6 +13,7 @@ import { IActivity, IEvent, IGeneric, IParticipant } from '@dtos'
 import { useAdvancedFilters } from '@hooks'
 import { useToast } from '@providers'
 import { api, usePaginatedRequest } from '@services'
+import { generateCertificatePdf } from '@services/pdf'
 import { capitalize } from '@utils'
 import { useRouter } from 'next/router'
 import { useCallback, useMemo, useState } from 'react'
@@ -348,20 +349,25 @@ export const CertificateList: React.FC<Props> = ({ event, openAccordion }) => {
 
         const tipoAtividade = certificate.activity?.type?.name || ''
         const criterioVisualizado = certificate.function?.name || ''
-        const html = buildCertificateHtml(selectedModel, event, certificate, {
-          tipoAtividade,
-          funcao: criterioVisualizado
-        })
-        const blob = new Blob([html], { type: 'text/html;charset=utf-8' })
-        const url = URL.createObjectURL(blob)
-        const link = document.createElement('a')
 
-        link.href = url
-        link.download = `certificado-${certificate.participant?.name || certificate.id}.html`
-        document.body.appendChild(link)
-        link.click()
-        link.remove()
-        URL.revokeObjectURL(url)
+        const pages = (selectedModel.pages || []).map(page => ({
+          backgroundImageUrl: page.image
+            ? `${storageUrl}/upload/${page.image}`
+            : undefined,
+          contentHtml: substituteCertificateText(
+            page.text,
+            event,
+            certificate,
+            { tipoAtividade, funcao: criterioVisualizado }
+          ),
+          validationCode:
+            page.type === 'frente' ? certificate.key : undefined,
+        }))
+
+        await generateCertificatePdf({
+          filename: `certificado-${certificate.participant?.name || certificate.id}`,
+          pages,
+        })
       } catch (err) {
         addToast({
           type: 'error',
