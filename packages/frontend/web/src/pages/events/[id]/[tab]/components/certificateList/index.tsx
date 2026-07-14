@@ -365,7 +365,7 @@ export const CertificateList: React.FC<Props> = ({ event, openAccordion }) => {
         }))
 
         await generateCertificatePdf({
-          filename: `certificado-${certificate.participant?.name || certificate.id}`,
+          filename: `certificado_${certificate.key || certificate.id}`,
           pages,
         })
       } catch (err) {
@@ -464,14 +464,46 @@ export const CertificateList: React.FC<Props> = ({ event, openAccordion }) => {
       <PaginatedTable request={request}>
         <thead>
           <tr>
-            <th>Nome</th>
-            <th>CPF</th>
-            <th>Atividade</th>
-            <th>Tipo de Atividade</th>
-            <th>Função</th>
-            <th>Carga Horária</th>
-            <th>Data Início</th>
-            <th>Data Fim</th>
+            <th onClick={() => handleOrder('participant_name')}>
+              <Column order={order} selected={column === 'participant_name'}>
+                Nome
+              </Column>
+            </th>
+            <th onClick={() => handleOrder('cpf')}>
+              <Column order={order} selected={column === 'cpf'}>
+                CPF
+              </Column>
+            </th>
+            <th onClick={() => handleOrder('activity')}>
+              <Column order={order} selected={column === 'activity'}>
+                Atividade
+              </Column>
+            </th>
+            <th onClick={() => handleOrder('type_activity')}>
+              <Column order={order} selected={column === 'type_activity'}>
+                Tipo de Atividade
+              </Column>
+            </th>
+            <th onClick={() => handleOrder('function')}>
+              <Column order={order} selected={column === 'function'}>
+                Função
+              </Column>
+            </th>
+            <th onClick={() => handleOrder('workload')}>
+              <Column order={order} selected={column === 'workload'}>
+                Carga Horária
+              </Column>
+            </th>
+            <th onClick={() => handleOrder('start_date')}>
+              <Column order={order} selected={column === 'start_date'}>
+                Data Início
+              </Column>
+            </th>
+            <th onClick={() => handleOrder('end_date')}>
+              <Column order={order} selected={column === 'end_date'}>
+                Data Fim
+              </Column>
+            </th>
             <th onClick={() => handleOrder('created_at')}>
               <Column order={order} selected={column === 'created_at'}>
                 Incluído Em

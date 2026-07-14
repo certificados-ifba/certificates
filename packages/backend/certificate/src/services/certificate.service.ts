@@ -201,23 +201,60 @@ export class CertificateService {
       if (endDateTo) matchStage.end_date.$lte = this.getEndOfDay(endDateTo)
     }
 
-    const sort = JSON.parse(`{"${sortBy}":"${orderBy}"}`)
+    const sortOrder = orderBy === 'DESC' ? -1 : 1
 
-    const certificates = await this.CertificateModel.find(matchStage)
-      .populate('function')
-      .populate({
-        path: 'activity',
-        populate: {
-          path: 'type'
-        }
-      })
-      .populate(user ? 'event' : 'participant')
-      .skip(perPage * (page - 1))
-      .limit(perPage)
-      .sort(sort)
-      .exec()
+    let certificates: any[]
+    let count: number
 
-    const count = await this.CertificateModel.countDocuments(matchStage)
+    if (sortBy === 'participant_name') {
+      const pipeline: any[] = [
+        { $match: matchStage },
+        {
+          $lookup: {
+            from: 'users',
+            localField: 'participant',
+            foreignField: '_id',
+            as: '_participant'
+          }
+        },
+        { $addFields: { _participantName: { $toLower: { $arrayElemAt: ['$_participant.name', 0] } } } },
+        { $sort: { _participantName: sortOrder } },
+        { $skip: perPage * (page - 1) },
+        { $limit: perPage }
+      ]
+
+      const countPipeline: any[] = [
+        { $match: matchStage },
+        { $count: 'total' }
+      ]
+
+      const [results, countResult] = await Promise.all([
+        this.CertificateModel.aggregate(pipeline).exec(),
+        this.CertificateModel.aggregate(countPipeline).exec()
+      ])
+
+      certificates = await this.CertificateModel.populate(results, [
+        { path: 'function' },
+        { path: 'activity', populate: { path: 'type' } },
+        { path: user ? 'event' : 'participant' }
+      ])
+
+      count = countResult[0]?.total ?? 0
+    } else {
+      const sort = JSON.parse(`{"${sortBy}":"${orderBy}"}`)
+
+      ;[certificates, count] = await Promise.all([
+        this.CertificateModel.find(matchStage)
+          .populate('function')
+          .populate({ path: 'activity', populate: { path: 'type' } })
+          .populate(user ? 'event' : 'participant')
+          .skip(perPage * (page - 1))
+          .limit(perPage)
+          .sort(sort)
+          .exec(),
+        this.CertificateModel.countDocuments(matchStage)
+      ])
+    }
 
     return {
       certificates,
