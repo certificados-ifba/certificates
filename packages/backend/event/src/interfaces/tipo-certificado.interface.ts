@@ -2,7 +2,7 @@ import { Document } from 'mongoose'
 
 export interface ITipoCertificado extends Document {
   user: any
-  tipo: string
+  type: string
   name: string
   local: string
   initials: string

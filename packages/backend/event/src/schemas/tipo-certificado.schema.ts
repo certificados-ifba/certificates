@@ -38,9 +38,9 @@ export const TipoCertificadoSchema = new mongoose.Schema(
       type: Date,
       required: [true, 'End date can not be empty']
     },
-    tipo: {
+    type: {
       type: String,
-      required: [true, 'Tipo can not be empty']
+      required: [true, 'Type can not be empty']
     },
     status: {
       type: String,
@@ -49,7 +49,7 @@ export const TipoCertificadoSchema = new mongoose.Schema(
     }
   },
   {
-    collection: 'tipos_certificado',
+    collection: 'certifications',
     timestamps: {
       createdAt: 'created_at',
       updatedAt: 'updated_at'

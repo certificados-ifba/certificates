@@ -45,7 +45,7 @@ export const TipoCertificadoSchema = new mongoose.Schema(
     }
   },
   {
-    collection: 'tipos_certificado',
+    collection: 'certifications',
     timestamps: {
       createdAt: 'created_at',
       updatedAt: 'updated_at'

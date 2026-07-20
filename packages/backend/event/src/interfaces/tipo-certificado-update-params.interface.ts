@@ -1,5 +1,5 @@
 export interface ITipoCertificadoUpdateParams {
-  tipo: string
+  type: string
   name: string
   local: string
   initials: string

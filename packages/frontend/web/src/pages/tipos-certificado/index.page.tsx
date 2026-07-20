@@ -106,8 +106,8 @@ const Certificacoes: React.FC = () => {
         <PaginatedTable request={request}>
           <thead>
             <tr>
-              <th onClick={() => handleOrder('tipo')}>
-                <Column order={order} selected={column === 'tipo'}>
+              <th onClick={() => handleOrder('type')}>
+                <Column order={order} selected={column === 'type'}>
                   Tipo
                 </Column>
               </th>
@@ -162,7 +162,7 @@ const Certificacoes: React.FC = () => {
                   router.push(`tipos-certificado/${event?.id}/info`)
                 }}
               >
-                <td>{event.tipo}</td>
+                <td>{event.type}</td>
                 <td>{`${event.name} (${event.initials})`}</td>
                 <td>{event.edition}</td>
                 <td>{event.year}</td>

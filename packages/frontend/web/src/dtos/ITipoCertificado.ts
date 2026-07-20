@@ -3,7 +3,7 @@ import { IUser } from './IUser'
 export interface ITipoCertificado {
   id: string
   status: 'DRAFT' | 'PUBLISHED' | 'REVIEW'
-  tipo: string
+  type: string
   name: string
   local: string
   initials: string

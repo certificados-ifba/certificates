@@ -79,7 +79,7 @@ export const TipoCertificadoModal: React.FC<Props> = ({
 
   const formRef = useRef<FormHandles>(null)
 
-  const tipoAtual = event?.tipo || tipo
+  const tipoAtual = event?.type || tipo
 
   const handleCloseSaveModal = useCallback(() => {
     formRef.current.reset()
@@ -126,7 +126,7 @@ export const TipoCertificadoModal: React.FC<Props> = ({
           abortEarly: false
         })
 
-        const payload = { ...data, tipo: tipoAtual }
+        const payload = { ...data, type: tipoAtual }
 
         if (type === 'add') {
           const response = await api.post('tipos-certificado', payload)

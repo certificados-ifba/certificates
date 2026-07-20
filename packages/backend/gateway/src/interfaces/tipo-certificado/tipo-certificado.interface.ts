@@ -2,7 +2,7 @@ import { IUser } from '../user/user.interface'
 
 export interface ITipoCertificado {
   id?: string
-  tipo: string
+  type: string
   name: string
   local: string
   initials: string
