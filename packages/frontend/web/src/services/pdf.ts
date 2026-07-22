@@ -2,13 +2,29 @@ export interface PdfPage {
   backgroundImageUrl?: string
   contentHtml: string
   validationCode?: string
+  layout?: {
+    orientation?: string
+    padding?: {
+      top?: string | number
+      right?: string | number
+      bottom?: string | number
+      left?: string | number
+    } | string | number
+    vertical?: {
+      name?: string
+      value?: number
+    }
+    horizontal?: {
+      name?: string
+      value?: number
+    }
+  }
 }
 
 export interface GenerateCertificatePdfOptions {
   pages: PdfPage[]
   filename: string
 }
-
 
 export async function generateCertificatePdf(
   options: GenerateCertificatePdfOptions
@@ -26,7 +42,45 @@ export async function generateCertificatePdf(
   const SCALE = 2
   const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' })
   for (let i = 0; i < pages.length; i++) {
-    const { backgroundImageUrl, contentHtml, validationCode } = pages[i]
+    const { backgroundImageUrl, contentHtml, validationCode, layout } = pages[i]
+    const orientation = layout?.orientation || 'horizontal'
+    const verticalPosition = layout?.vertical?.name || 'bottom'
+    const horizontalPosition = layout?.horizontal?.name || 'right'
+    const verticalPadding = layout?.vertical?.value !== undefined ? Number(layout.vertical.value) : 0
+    const horizontalPadding = layout?.horizontal?.value !== undefined ? Number(layout.horizontal.value) : 0
+    let paddingStyle = ''
+    if (layout?.padding) {
+      if (typeof layout.padding === 'object') {
+        const top = layout.padding.top !== undefined ? layout.padding.top : 0
+        const bottom = layout.padding.bottom !== undefined ? layout.padding.bottom : 0
+        const left = layout.padding.left !== undefined ? layout.padding.left : 0
+        const right = layout.padding.right !== undefined ? layout.padding.right : 0
+        paddingStyle = `padding-top:${top}%;padding-bottom:${bottom}%;padding-left:${left}%;padding-right:${right}%;`
+      } else {
+        paddingStyle = `padding:${layout.padding}%;`
+      }
+    }
+    let validationStyle = `
+      position: absolute;
+      font-size: small;
+      white-space: nowrap;
+      z-index: 2;
+    `
+    if (orientation === 'horizontal') {
+      validationStyle += `
+        ${verticalPosition}: 0;
+        left: calc(50% + ${horizontalPadding}%);
+        transform: translateX(-50%);
+      `
+    } else {
+      validationStyle += `
+        writing-mode: vertical-rl;
+        top: calc(50% + ${verticalPadding}%);
+        transform: translateY(-50%);
+        ${horizontalPosition}: 0;
+      `
+    }
+
     const container = document.createElement('div')
     Object.assign(container.style, {
       position: 'absolute',
@@ -53,28 +107,29 @@ export async function generateCertificatePdf(
             />`
           : ''}
         <div style="
-          position:relative;
+          position:absolute;
+          inset:0;
           z-index:1;
-          display:flex;
-          align-items:center;
-          justify-content:center;
-          height:100%;
-          padding:15mm;
-          text-align:center;
+          box-sizing:border-box;
+          ${paddingStyle}
         ">
-          <div style="width:100%;">${contentHtml}</div>
+          <div style="
+            display:flex;
+            width:100%;
+            height:100%;
+          ">
+            <div style="
+              width:100%;
+              margin-top:auto;
+              margin-bottom:auto;
+              text-align:center;
+            ">
+              ${contentHtml}
+            </div>
+          </div>
         </div>
         ${validationCode
-          ? `<div style="
-              position:absolute;
-              bottom:8mm;
-              left:0;
-              right:0;
-              text-align:center;
-              font-family:Arial,sans-serif;
-              font-size:9px;
-              z-index:2;
-            ">Código: <strong>${validationCode}</strong></div>`
+          ? `<div style="${validationStyle}">Código: <strong>${validationCode}</strong></div>`
           : ''}
       </div>
     `

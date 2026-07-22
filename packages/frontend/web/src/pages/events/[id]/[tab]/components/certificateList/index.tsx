@@ -356,6 +356,7 @@ export const CertificateList: React.FC<Props> = ({ event, openAccordion }) => {
           ),
           validationCode:
             page.type === 'frente' ? certificate.key : undefined,
+          layout: page.layout,
         }))
 
         await generateCertificatePdf({
