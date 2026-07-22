@@ -57,3 +57,66 @@ export const getActivitySchema = (
       )
       .required('Selecione a data do fim')
   })
+
+export const getCertificateSchema = (
+  event_start_date: string,
+  event_end_date: string,
+  activityWorkloads: Record<string, number> = {}
+): Yup.AnySchema =>
+  Yup.object().shape({
+    cpf: Yup.string()
+      .required('CPF inválido por estar em branco')
+      .matches(/(\d{3})\.(\d{3})\.(\d{3})-(\d{2})/, {
+        message: 'CPF inválido por formato incorreto',
+        excludeEmptyString: true
+      })
+      .test(
+        'cpf-is-valid',
+        'CPF inválido por número estar incorreto',
+        value => {
+          if (!value) return true
+          return isValidCpf(value)
+        }
+      ),
+    participant_name: Yup.string().required('Digite o nome do participante'),
+    activity: Yup.string().required('Selecione uma atividade'),
+    function: Yup.string().required('Selecione uma função'),
+    workload: Yup.number()
+      .typeError('Por favor, digite a carga horária')
+      .min(1, 'A carga horária precisa ser maior que zero')
+      .required('Por favor, digite a carga horária')
+      .test(
+        'max-activity-workload',
+        'A carga horária não pode ser maior que a carga horária da atividade',
+        function (value) {
+          const activityId = this.parent.activity
+          if (!activityId || !activityWorkloads[activityId]) return true
+          return value <= activityWorkloads[activityId]
+        }
+      ),
+    start_date: Yup.string()
+      .test(
+        'in-date-range',
+        `A data inicial precisa estar entre ${formatDate(
+          event_start_date
+        )} e ${formatDate(event_end_date)}`,
+        (value: string) => inDateRange(value, event_start_date, event_end_date)
+      )
+      .required('Selecione a data de início'),
+    end_date: Yup.string()
+      .test(
+        'in-date-range',
+        `A data final precisa estar entre ${formatDate(
+          event_start_date
+        )} e ${formatDate(event_end_date)}`,
+        (value: string) => inDateRange(value, event_start_date, event_end_date)
+      )
+      .test(
+        'min-date',
+        'A data final precisa ser maior ou igual à data inicial',
+        (value, context) => minDate(value, context.parent.start_date)
+      )
+      .required('Selecione a data do fim'),
+    authorship_order: Yup.string(),
+    additional_field: Yup.string()
+  })

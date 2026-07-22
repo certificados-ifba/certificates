@@ -1,4 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger'
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
 
 export class CreateCertificateDto {
   @ApiProperty({ example: '5d987c3bfb881ec86b476bfa' })
@@ -7,11 +7,14 @@ export class CreateCertificateDto {
   @ApiProperty({ example: '5d987c3bfb881ec86b476bfa' })
   function: string
 
-  @ApiProperty({ example: '5d987c3bfb881ec86b476bfa' })
-  participant: string
+  @ApiPropertyOptional({ example: '5d987c3bfb881ec86b476bfa' })
+  participant?: string
 
-  @ApiProperty({ example: '5d987c3bfb881ec86b476bfa' })
-  event: string
+  @ApiPropertyOptional({ example: '000.000.000-00' })
+  cpf?: string
+
+  @ApiPropertyOptional({ example: '5d987c3bfb881ec86b476bfa' })
+  event?: string
 
   @ApiProperty({ example: 40 })
   workload: number

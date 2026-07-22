@@ -1,8 +1,9 @@
-import { Accordion } from '@components'
+import { Accordion, Button } from '@components'
 import { IEvent } from '@dtos'
 import { CertificatesProvider } from '@providers'
+import { useRouter } from 'next/router'
 import { useCallback, useState } from 'react'
-import { FiPlusCircle, FiUsers } from 'react-icons/fi'
+import { FiFilePlus, FiPlusCircle, FiUsers } from 'react-icons/fi'
 
 import { CertificateList, CertificateForm } from '..'
 
@@ -14,13 +15,20 @@ interface Props {
 
 export const EventParticipant: React.FC<Props> = ({ event }) => {
   const [isOpen, setIsOpen] = useState(false)
-
+  const [revalidateKey, setRevalidateKey] = useState(0)
+  const router = useRouter()
   const handleOpenAccordion = useCallback(() => setIsOpen(true), [])
   const handleCloseAccordion = useCallback(() => setIsOpen(false), [])
   const handleToggle = useCallback(() => setIsOpen(isOpen => !isOpen), [])
+  const handleRevalidateList = useCallback(() => {
+    setRevalidateKey(prev => prev + 1)
+  }, [])
 
   return (
     <Container>
+      <header>
+        <h2>Participantes do Evento</h2>
+      </header>
       {event?.status !== 'PUBLISHED' && (
         <Accordion
           title="Adicionar Participações"
@@ -32,12 +40,17 @@ export const EventParticipant: React.FC<Props> = ({ event }) => {
             <CertificateForm
               event={event}
               closeAccordion={handleCloseAccordion}
+              onParticipantSaved={handleRevalidateList}
             />
           </CertificatesProvider>
         </Accordion>
       )}
-      <Accordion title="Participantes do Evento" isOpen={true} icon={FiUsers}>
-        <CertificateList event={event} openAccordion={handleOpenAccordion} />
+      <Accordion title="Participantes do Evento" icon={FiUsers}>
+        <CertificateList
+          key={revalidateKey}
+          event={event}
+          openAccordion={handleOpenAccordion}
+        />
       </Accordion>
     </Container>
   )

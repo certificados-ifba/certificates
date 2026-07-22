@@ -95,6 +95,7 @@ export const Import: React.FC<Props> = ({
           schema={schema}
           dataSheet={dataSheet}
           onFinished={handleFinished}
+          filename={filename}
         />
       ),
       enablePreviousStep: !!finished,
