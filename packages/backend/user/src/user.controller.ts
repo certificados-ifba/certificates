@@ -34,7 +34,10 @@ export class UserController {
     let result: IUserSearchResponse
 
     if (searchParams.cpf && searchParams.dob) {
-      const user = await this.userService.searchUserByCpf(searchParams.cpf)
+      const user = await this.userService.searchUserByCpf(
+        searchParams.cpf,
+        'PARTICIPANT'
+      )
 
       if (user && user.role === 'PARTICIPANT') {
         const isValid = await this.userService.validToken(searchParams.token)
@@ -208,7 +211,10 @@ export class UserController {
 
     if (cpf) {
       const cleanCpf = cpf.replace(/[^\d]+/g, '')
-      const user = await this.userService.searchUserByCpf(cleanCpf)
+      const user = await this.userService.searchUserByCpf(
+        cleanCpf,
+        'PARTICIPANT'
+      )
       if (user) {
         result = {
           status: HttpStatus.OK,

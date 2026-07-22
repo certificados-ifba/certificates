@@ -9,6 +9,13 @@ export const formatCpf = (cpf: string): string => {
     .replace(/(-\d{2})\d+?$/, '$1')
 }
 
+export const maskCpf = (cpf: string): string => {
+  if (!cpf) return ''
+  const clean = cpf.replace(/\D/g, '')
+  if (clean.length !== 11) return cpf
+  return `***.${clean.slice(3, 6)}.${clean.slice(6, 9)}-**`
+}
+
 export const formatPhone = (phone: string): string => {
   if (!phone) return ''
   return phone

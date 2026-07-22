@@ -28,10 +28,30 @@ export const downloadInconsistencies = async (
   filename: string
 ): Promise<void> => {
   const errors = registers.filter(r => r.status === 'error')
-  const workbook = await createSheet(dataSheet)
+  const sheetData = [
+    ...dataSheet,
+    {
+      column: {
+        header: 'Motivo do erro',
+        key: 'error_reason',
+        width: 50
+      }
+    }
+  ]
+  const workbook = await createSheet(sheetData)
   const worksheet = workbook.getWorksheet(SHEET_NAME)
-  errors.forEach(({ data }) => {
-    worksheet.addRow(dataSheet.map(({ column }) => data[column.key]))
+  errors.forEach(({ data, fieldErrors, message }, index) => {
+    const row = worksheet.getRow(3 + index)
+    const errorReason =
+      Object.values(fieldErrors ?? {}).filter(Boolean).join('; ') || message
+
+    sheetData.forEach(({ column }, columnIndex) => {
+      const value =
+        column.key === 'error_reason' ? errorReason : data[column.key]
+      const cell = row.getCell(columnIndex + 1)
+      cell.value = value
+      cell.style = { ...cell.style, ...CELL_STYLE }
+    })
   })
   await downloadSheet(workbook, filename)
 }

@@ -24,9 +24,10 @@ export class UserService {
     }).exec()
   }
 
-  public async searchUserByCpf(cpf: String): Promise<IUser> {
+  public async searchUserByCpf(cpf: string, role?: string): Promise<IUser> {
     return this.UserModel.findOne({
-      'personal_data.cpf': cpf
+      'personal_data.cpf': cpf,
+      ...(role ? { role } : {})
     }).exec()
   }
 

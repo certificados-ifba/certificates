@@ -1,4 +1,3 @@
-import Cookie from 'js-cookie'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
 type Filters = Record<string, any>
@@ -19,14 +18,16 @@ const removeEmptyFilters = (filters: Filters): Filters => {
 }
 
 const parseStoredFilters = (key: string): Filters => {
-  const storedFilters = Cookie.get(key)
+  if (typeof window === 'undefined') return {}
+
+  const storedFilters = window.localStorage.getItem(key)
 
   if (!storedFilters) return {}
 
   try {
     return JSON.parse(storedFilters)
   } catch {
-    Cookie.remove(key)
+    window.localStorage.removeItem(key)
     return {}
   }
 }
@@ -43,14 +44,16 @@ export const useAdvancedFilters = (key: string) => {
   }, [key])
 
   useEffect(() => {
+    if (typeof window === 'undefined') return
+
     const nextFilters = removeEmptyFilters(filters)
 
     if (Object.keys(nextFilters).length === 0) {
-      Cookie.remove(key)
+      window.localStorage.removeItem(key)
       return
     }
 
-    Cookie.set(key, JSON.stringify(nextFilters))
+    window.localStorage.setItem(key, JSON.stringify(nextFilters))
   }, [filters, key])
 
   const setField = useCallback((name: string, value: any) => {
@@ -73,7 +76,9 @@ export const useAdvancedFilters = (key: string) => {
   const clear = useCallback(() => {
     setDraft({})
     setFilters({})
-    Cookie.remove(key)
+    if (typeof window !== 'undefined') {
+      window.localStorage.removeItem(key)
+    }
   }, [key])
 
   const activeCount = useMemo(() => {

@@ -1,6 +1,7 @@
 import { Button, Spinner, Table } from '@components'
 import { PaginatedRequest } from '@services'
 import { theme } from '@styles'
+import { buildPaginationPages } from '@utils'
 import { useCallback, useMemo } from 'react'
 import {
   FiChevronLeft,
@@ -38,43 +39,19 @@ export const PaginatedTable: React.FC<Props> = ({ request, children }) => {
     response
   ])
 
-  const numberOfPages = useMemo(() => response?.headers['x-total-page'], [
-    response
-  ])
+  const numberOfPages = useMemo(
+    () => Number(response?.headers['x-total-page'] ?? 0),
+    [response]
+  )
 
   const loadLast = useCallback(() => {
     goToPage(Number(numberOfPages))
   }, [goToPage, numberOfPages])
 
-  const pages = useMemo(() => {
-    const pages = []
-    for (let index = 1; index <= numberOfPages; index++) {
-      const upper = page + (page < 5 ? 7 - page : 3)
-      const lower =
-        page - (page + 3 > numberOfPages ? page + 6 - numberOfPages : 3)
-      if (
-        (index > lower && index < upper) ||
-        index === 1 ||
-        index === Number(numberOfPages)
-      ) {
-        pages.push({
-          value:
-            (index - 1 > lower && index + 1 < upper) ||
-            index < 3 ||
-            index > numberOfPages - 2
-              ? index
-              : 0,
-          label:
-            (index - 1 > lower && index + 1 < upper) ||
-            index < 3 ||
-            index > numberOfPages - 2
-              ? String(index)
-              : '...'
-        })
-      }
-    }
-    return pages
-  }, [page, numberOfPages])
+  const pages = useMemo(
+    () => buildPaginationPages(page, numberOfPages),
+    [page, numberOfPages]
+  )
 
   return (
     <>

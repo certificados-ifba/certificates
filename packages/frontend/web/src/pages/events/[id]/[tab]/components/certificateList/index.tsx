@@ -14,7 +14,7 @@ import { useAdvancedFilters } from '@hooks'
 import { useToast } from '@providers'
 import { api, usePaginatedRequest } from '@services'
 import { generateCertificatePdf } from '@services/pdf'
-import { capitalize } from '@utils'
+import { capitalize, maskCpf } from '@utils'
 import { useRouter } from 'next/router'
 import { useCallback, useMemo, useState } from 'react'
 import {
@@ -34,12 +34,6 @@ interface Props {
   openAccordion: () => void
 }
 
-const maskCpf = (cpf: string): string => {
-  if (!cpf) return ''
-  const clean = cpf.replace(/\D/g, '')
-  if (clean.length !== 11) return cpf
-  return `***.${clean.slice(3, 6)}.${clean.slice(6, 9)}-**`
-}
 interface ICertificate {
   id: string
   activity: IActivity

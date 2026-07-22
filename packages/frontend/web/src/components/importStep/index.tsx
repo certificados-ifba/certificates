@@ -17,7 +17,8 @@ import {
   sendData,
   IDataSheet,
   isDate,
-  downloadInconsistencies
+  downloadInconsistencies,
+  buildPaginationPages
 } from '@utils'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
@@ -105,35 +106,10 @@ export const ImportStep: React.FC<Props> = ({
   const hasPreviousPage = page > 1
   const hasNextPage = page < numberOfPages
 
-  const pages = useMemo(() => {
-    const list = []
-    for (let index = 1; index <= numberOfPages; index++) {
-      const upper = page + (page < 5 ? 7 - page : 3)
-      const lower =
-        page - (page + 3 > numberOfPages ? page + 6 - numberOfPages : 3)
-      if (
-        (index > lower && index < upper) ||
-        index === 1 ||
-        index === Number(numberOfPages)
-      ) {
-        list.push({
-          value:
-            (index - 1 > lower && index + 1 < upper) ||
-            index < 3 ||
-            index > numberOfPages - 2
-              ? index
-              : 0,
-          label:
-            (index - 1 > lower && index + 1 < upper) ||
-            index < 3 ||
-            index > numberOfPages - 2
-              ? String(index)
-              : '...'
-        })
-      }
-    }
-    return list
-  }, [page, numberOfPages])
+  const pages = useMemo(
+    () => buildPaginationPages(page, numberOfPages),
+    [page, numberOfPages]
+  )
 
   const resetPage = useCallback(() => {
     setPage(1)
@@ -230,6 +206,7 @@ export const ImportStep: React.FC<Props> = ({
   }, [file, status.type, onFinished, url, schema])
 
   const { percentage, message, type, info, errors } = status
+  const showErrorsAlert = errors > 0 && type !== 'loading'
 
   const Icon = type === 'error' ? FiAlertCircle : FiCheckCircle
 
@@ -251,13 +228,13 @@ export const ImportStep: React.FC<Props> = ({
         <h2>{message}</h2>
         <ProgressBar width={percentage} />
         <Info>{info}</Info>
-        {errors > 0 && type !== 'loading' && (
+        {showErrorsAlert && (
           <Alert type="danger" card marginBottom="xs">
             Houve <b>{errors} erro(s)</b> na importação. Verifique o(s)
             registro(s) para mais informações.
           </Alert>
         )}
-        {errors > 0 && type !== 'loading' && (
+        {showErrorsAlert && (
           <Button
             outline
             color="danger"

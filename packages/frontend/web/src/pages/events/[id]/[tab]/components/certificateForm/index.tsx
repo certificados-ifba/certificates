@@ -17,7 +17,7 @@ import { useToast } from '@providers'
 import { api, usePaginatedRequest } from '@services'
 import { FormHandles } from '@unform/core'
 import { Form } from '@unform/web'
-import { capitalize, getValidationErrors, maskDob, maskEmail } from '@utils'
+import { capitalize, getValidationErrors, maskCpf, maskDob, maskEmail } from '@utils'
 import { useCallback, useRef } from 'react'
 import {
   FiAlignCenter,
@@ -34,12 +34,6 @@ import {
 import * as Yup from 'yup'
 
 const { Section } = Accordion
-const maskCpf = (cpf: string): string => {
-  if (!cpf) return ''
-  const clean = cpf.replace(/\D/g, '')
-  if (clean.length !== 11) return cpf
-  return `***.${clean.slice(3, 6)}.${clean.slice(6, 9)}-**`
-}
 
 interface Props {
   event: IEvent

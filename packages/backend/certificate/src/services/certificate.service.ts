@@ -48,9 +48,7 @@ export class CertificateService {
     })
 
     if (duplicateCertificate) {
-      throw new Error(
-        'Já existe um certificado para este participante nesta atividade com esta função'
-      )
+      throw new Error('certificate_create_conflict_duplicate')
     }
     const existingCertificateInActivity = await this.CertificateModel.findOne({
       participant: certificateBody.participant,
@@ -217,10 +215,22 @@ export class CertificateService {
             as: '_participant'
           }
         },
-        { $addFields: { _participantName: { $toLower: { $arrayElemAt: ['$_participant.name', 0] } } } },
+        {
+          $addFields: {
+            _participantName: {
+              $toLower: { $arrayElemAt: ['$_participant.name', 0] }
+            }
+          }
+        },
         { $sort: { _participantName: sortOrder } },
         { $skip: perPage * (page - 1) },
-        { $limit: perPage }
+        { $limit: perPage },
+        {
+          $project: {
+            _participant: 0,
+            _participantName: 0
+          }
+        }
       ]
 
       const countPipeline: any[] = [
