@@ -46,6 +46,10 @@ export const getErrorMessage = (
     case 'certificate_create_participant_not_found':
       message = 'Participante não cadastrado'
       break
+    case 'certificate_create_conflict_same_function':
+      message =
+        'O participante já possui um certificado com esta função nesta atividade.'
+      break
     case 'certificate_create_conflict_duplicate':
       message =
         'O participante já possui outra função cadastrada nesta atividade.'

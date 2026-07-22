@@ -48,7 +48,7 @@ export class CertificateService {
     })
 
     if (duplicateCertificate) {
-      throw new Error('certificate_create_conflict_duplicate')
+      throw new Error('certificate_create_conflict_same_function')
     }
     const existingCertificateInActivity = await this.CertificateModel.findOne({
       participant: certificateBody.participant,
@@ -58,9 +58,7 @@ export class CertificateService {
     })
 
     if (existingCertificateInActivity) {
-      throw new Error(
-        'O participante já possui outra função cadastrada nesta atividade'
-      )
+      throw new Error('certificate_create_conflict_duplicate')
     }
 
     const CertificateModel = new this.CertificateModel(certificateBody)
