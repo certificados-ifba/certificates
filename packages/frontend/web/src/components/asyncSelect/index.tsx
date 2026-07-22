@@ -1,19 +1,22 @@
 /* eslint-disable react/display-name */
-import { FormHandles, useField } from '@unform/core'
+import { FormHandles, FormContext } from '@unform/core'
 import { useDebounce } from '@utils'
 import {
   useRef,
   useEffect,
   MutableRefObject,
   useCallback,
-  useState
+  useState,
+  useContext
 } from 'react'
 import { IconBaseProps } from 'react-icons'
 import { FiAlertCircle } from 'react-icons/fi'
 import { components, OptionTypeBase } from 'react-select'
-import { Props as AsyncProps } from 'react-select/async'
+import { Props as AsyncProps } from 'react-select/async-creatable'
 
 import { Container, AsyncReactSelect, IconArea, Label, Error } from './styles'
+
+const getSelectInstance = (ref: any) => ref?.select?.select || ref?.select || ref
 
 interface Props extends AsyncProps<OptionTypeBase, boolean> {
   name: string
@@ -21,7 +24,10 @@ interface Props extends AsyncProps<OptionTypeBase, boolean> {
   marginBottom?: 'sm' | 'md' | 'lg' | 'xs'
   formRef?: MutableRefObject<FormHandles>
   icon?: React.ComponentType<IconBaseProps>
-  handleOnSelect?: (value: { label: string; value: any }) => void
+  handleOnSelect?: (value: { label: string; value: any } | null) => void
+  isCreatable?: boolean
+  allowCreateWhileLoading?: boolean
+  formatCreateLabel?: (text: string) => string
 }
 
 export const AsyncSelect: React.FC<Props> = ({
@@ -35,7 +41,11 @@ export const AsyncSelect: React.FC<Props> = ({
   ...rest
 }) => {
   const selectRef = useRef(null)
-  const { fieldName, defaultValue, registerField, error } = useField(name)
+  const formContext = useContext(FormContext) as any
+  const fieldName = name
+  const defaultValue = formContext?.initialData?.[name]
+  const registerField = formContext?.registerField
+  const error = formContext?.errors?.[name]
   const [isFilled, setIsFilled] = useState(false)
 
   const handleOnChangeSelect = useCallback(
@@ -56,11 +66,25 @@ export const AsyncSelect: React.FC<Props> = ({
   )
 
   useEffect(() => {
+    if (!registerField) return
+
     registerField({
       name: fieldName,
       ref: selectRef.current,
       setValue: (ref, value) => {
-        ref?.select?.select?.setValue(value)
+        const select = getSelectInstance(ref)
+
+        if (typeof select?.setValue === 'function') {
+          select.setValue(value)
+          return
+        }
+
+        if (
+          typeof select?.clearValue === 'function' &&
+          (value === null || value === undefined || value === '')
+        ) {
+          select.clearValue()
+        }
       },
       getValue: ref => {
         if (rest.isMulti) {
@@ -82,7 +106,13 @@ export const AsyncSelect: React.FC<Props> = ({
         return ref?.select?.state?.value?.value
       },
       clearValue: ref => {
-        ref?.select?.select?.setValue()
+        const select = getSelectInstance(ref)
+
+        if (typeof select?.clearValue === 'function') {
+          select.clearValue()
+        } else if (typeof select?.setValue === 'function') {
+          select.setValue(null)
+        }
         setIsFilled(false)
       }
     })
@@ -115,6 +145,7 @@ export const AsyncSelect: React.FC<Props> = ({
       )
     },
     ...rest,
+    isCreatable: rest.isCreatable ?? false,
     theme: undefined
   }
 

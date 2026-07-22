@@ -34,7 +34,10 @@ export class UserController {
     let result: IUserSearchResponse
 
     if (searchParams.cpf && searchParams.dob) {
-      const user = await this.userService.searchUserByCpf(searchParams.cpf)
+      const user = await this.userService.searchUserByCpf(
+        searchParams.cpf,
+        'PARTICIPANT'
+      )
 
       if (user && user.role === 'PARTICIPANT') {
         const isValid = await this.userService.validToken(searchParams.token)
@@ -195,6 +198,40 @@ export class UserController {
       result = {
         status: HttpStatus.BAD_REQUEST,
         message: 'user_get_by_id_bad_request',
+        data: null
+      }
+    }
+
+    return result
+  }
+
+  @MessagePattern('user_get_by_cpf')
+  public async getUserByCpf(cpf: string): Promise<IUserSearchResponse> {
+    let result: IUserSearchResponse
+
+    if (cpf) {
+      const cleanCpf = cpf.replace(/[^\d]+/g, '')
+      const user = await this.userService.searchUserByCpf(
+        cleanCpf,
+        'PARTICIPANT'
+      )
+      if (user) {
+        result = {
+          status: HttpStatus.OK,
+          message: 'user_get_by_cpf_success',
+          data: { user }
+        }
+      } else {
+        result = {
+          status: HttpStatus.NOT_FOUND,
+          message: 'user_get_by_cpf_not_found',
+          data: null
+        }
+      }
+    } else {
+      result = {
+        status: HttpStatus.BAD_REQUEST,
+        message: 'user_get_by_cpf_bad_request',
         data: null
       }
     }

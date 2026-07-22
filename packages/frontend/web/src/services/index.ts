@@ -1,4 +1,6 @@
 export { default as api } from './axios'
 export * from './participant'
+export { generateCertificatePdf } from './pdf'
+export type { GenerateCertificatePdfOptions, PdfPage } from './pdf'
 export * from './usePaginatedRequest'
 export * from './useRequest'

@@ -14,6 +14,7 @@ export const ActivitySchema = new mongoose.Schema(
     },
     type: {
       type: mongoose.Schema.Types.ObjectId,
+      ref: 'Generic',
       required: [true, 'Type can not be empty']
     },
     name: {

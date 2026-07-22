@@ -137,11 +137,13 @@ export class CertificateController {
           errors: null
         }
       } catch (e) {
+        const errorMessage =
+          e.message || 'certificate_create_precondition_failed'
         result = {
           status: HttpStatus.PRECONDITION_FAILED,
-          message: 'certificate_create_precondition_failed',
+          message: errorMessage,
           certificate: null,
-          errors: e.errors
+          errors: e.errors || { message: errorMessage }
         }
       }
     } else {

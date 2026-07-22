@@ -78,7 +78,8 @@ export const ParticipantModal: React.FC<Props> = ({
           title: `O participante ${type === 'add' ? 'cadastrado' : 'atualizado'
             }`,
           description: `${data.name} foi ${type === 'add' ? 'cadastrado' : 'atualizado'
-            } com sucesso.`
+            } com sucesso.`,
+          fixed: type === 'add'
         })
         request.revalidate()
         setLoading(false)

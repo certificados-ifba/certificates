@@ -29,7 +29,7 @@ export const CertificateInfo: React.FC<Props> = ({ eventId, certificate }) => {
       addToast({
         type: 'success',
         title: 'Participação Removida',
-        description: 'O participante foi removido da atividade'
+        description: 'O participante foi removido(a) da atividade'
       })
     } catch (err) {
       addToast({

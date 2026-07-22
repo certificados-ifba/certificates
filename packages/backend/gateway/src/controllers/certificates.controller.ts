@@ -43,6 +43,7 @@ import { IServiceCertificateValidateResponse } from '../interfaces/certificate/s
 // import { IServiceCertificateListResponse } from '../interfaces/certificate/service-certificate-list-response.interface'
 import { IAuthorizedRequest } from '../interfaces/common/authorized-request.interface'
 import { IServiceTipoCertificadoGetByIdResponse } from '../interfaces/tipo-certificado/service-tipo-certificado-get-by-id-response.interface'
+import { IServiceParticipantGetByIdResponse } from '../interfaces/participant/service-participant-get-by-id-response.interface'
 // import capitalize from '../utils/capitalize'
 
 @Controller('')
@@ -53,7 +54,9 @@ export class CertificatesController {
     @Inject('CERTIFICATE_SERVICE')
     private readonly certificateServiceClient: ClientProxy,
     @Inject('TIPO_CERTIFICADO_SERVICE')
-    private readonly eventServiceClient: ClientProxy
+    private readonly eventServiceClient: ClientProxy,
+    @Inject('USER_SERVICE')
+    private readonly userServiceClient: ClientProxy
   ) {}
 
   @Get('certificates/validate/:key')
@@ -101,7 +104,22 @@ export class CertificatesController {
     @Res({ passthrough: true }) res: Response,
     @Query() query: ListCertificateDto
   ): Promise<ListCertificateResponseDto> {
-    const { search, page, per_page, sort_by, order_by } = query
+    const {
+      search,
+      activity,
+      typeActivity,
+      function: _function,
+      workload_min,
+      workload_max,
+      start_date_from,
+      start_date_to,
+      end_date_from,
+      end_date_to,
+      page,
+      per_page,
+      sort_by,
+      order_by
+    } = query
 
     const eventResponse: IServiceTipoCertificadoGetByIdResponse = await this.eventServiceClient
       .send('tipo_certificado_get_by_id', {
@@ -124,6 +142,15 @@ export class CertificatesController {
     const certificatesResponse: IServiceCertificateListResponse = await this.certificateServiceClient
       .send('certificate_list', {
         name: search,
+        activity,
+        typeActivity,
+        function: _function,
+        workloadMin: workload_min,
+        workloadMax: workload_max,
+        startDateFrom: start_date_from,
+        startDateTo: start_date_to,
+        endDateFrom: end_date_from,
+        endDateTo: end_date_to,
         event: eventResponse.data.event.id,
         page: Number(page),
         perPage: Number(per_page),
@@ -160,8 +187,40 @@ export class CertificatesController {
       end_date,
       authorship_order,
       additional_field,
-      participant
+      participant,
+      cpf
     } = certificateRequest
+
+    let participantId = participant
+    if (!participantId && cpf) {
+      const cleanCpf = cpf.replace(/[^\d]+/g, '')
+      const userResponse: IServiceParticipantGetByIdResponse = await this.userServiceClient
+        .send('user_get_by_cpf', cleanCpf)
+        .toPromise()
+
+      if (userResponse.status !== HttpStatus.OK) {
+        throw new HttpException(
+          {
+            message: 'CPF válido, porém o participante não está cadastrado',
+            data: null,
+            errors: null
+          },
+          HttpStatus.NOT_FOUND
+        )
+      }
+      participantId = userResponse.data.user.id
+    }
+
+    if (!participantId) {
+      throw new HttpException(
+        {
+          message: 'É necessário informar o participante ou o CPF',
+          data: null,
+          errors: null
+        },
+        HttpStatus.BAD_REQUEST
+      )
+    }
 
     const eventResponse: IServiceTipoCertificadoGetByIdResponse = await this.eventServiceClient
       .send('tipo_certificado_get_by_id', {
@@ -185,7 +244,7 @@ export class CertificatesController {
       .send('certificate_create', {
         activity,
         function: _function,
-        participant,
+        participant: participantId,
         event: eventResponse.data.event.id,
         workload,
         start_date,

@@ -1,67 +1,61 @@
 import {
-  Alert,
+  AdvancedFilters,
   AsyncSelect,
+  Accordion,
   Button,
+  Divider,
+  FilterInput,
   Grid,
   Input,
-  Accordion,
-  Divider,
-  AccordionCard
+  PaginatedTable,
+  TableRow
 } from '@components'
-import { Badge, Group, IconArea } from '@components/select/styles'
+import { Badge, Group } from '@components/select/styles'
 import { IActivity, ITipoCertificado, IGeneric, IParticipant } from '@dtos'
-import { useCertificates, useToast } from '@providers'
-import { api } from '@services'
+import { useAdvancedFilters } from '@hooks'
+import { useToast } from '@providers'
+import { api, usePaginatedRequest } from '@services'
 import { FormHandles } from '@unform/core'
 import { Form } from '@unform/web'
-import { capitalize, getValidationErrors } from '@utils'
-import { useCallback, useRef, useState } from 'react'
+import { capitalize, getValidationErrors, maskCpf, maskDob, maskEmail } from '@utils'
+import { useCallback, useRef } from 'react'
 import {
-  FiAlertCircle,
   FiAlignCenter,
+  FiAtSign,
   FiBook,
   FiBriefcase,
   FiCalendar,
-  FiChevronDown,
-  FiChevronUp,
   FiClock,
   FiCreditCard,
   FiFileText,
-  FiMail,
-  FiUsers,
-  FiX
+  FiPlus,
+  FiSearch
 } from 'react-icons/fi'
-import { components } from 'react-select'
 import * as Yup from 'yup'
 
-import { CertificateInfo } from '..'
-
-import { InfoOption, TitleOption } from './styles'
-
-const { Section, Footer } = Accordion
+const { Section } = Accordion
 
 interface Props {
   event: ITipoCertificado
   closeAccordion: () => void
+  onParticipantSaved?: () => void
 }
 
-export const CertificateForm: React.FC<Props> = ({ event, closeAccordion }) => {
-  const [showAll, setShowAll] = useState(false)
+export const CertificateForm: React.FC<Props> = ({
+  event,
+  onParticipantSaved
+}) => {
+  const filtersState = useAdvancedFilters(
+    `event-add-participant-filters:${event?.id}`
+  )
   const { addToast } = useToast()
-  const { certificates, isEmpty, handleAdd, handleReset } = useCertificates()
   const formRef = useRef<FormHandles>(null)
-
-  const focusSelect = useCallback((field: string) => {
-    const select = formRef?.current?.getFieldRef(field)?.select
-    if (!select) return
-    select.state.menuIsOpen = true
-    select.select?.focus()
-  }, [])
-
-  const clearSelect = useCallback((field: string) => {
-    const select = formRef?.current?.getFieldRef(field)?.select
-    select?.select?.setValue(null)
-  }, [])
+  const participantsRequest = usePaginatedRequest<any, any>({
+    url: 'participants',
+    params: filtersState.filters
+      ? { ...filtersState.filters, sort_by: 'name', order_by: 'ASC' }
+      : { sort_by: 'name', order_by: 'ASC' }
+  })
 
   const handleParticipantSelect = useCallback(
     async (participant: any) => {
@@ -89,20 +83,24 @@ export const CertificateForm: React.FC<Props> = ({ event, closeAccordion }) => {
           authorship_order,
           additional_field
         } = data
-        handleAdd({
+        await api.post(`events/${event?.id}/certificates`, {
           activity,
           function: _function,
+          participant: participant.id,
           workload,
           start_date,
           end_date,
           authorship_order,
-          additional_field,
-          participant
+          additional_field
         })
-        clearSelect('participant')
-        focusSelect('participant')
+        addToast({
+          type: 'success',
+          title: 'Participante cadastrado',
+          description: `${participant.name} foi cadastrado(a) com sucesso no evento.`,
+          fixed: true
+        })
+        if (onParticipantSaved) onParticipantSaved()
       } catch (err) {
-        clearSelect('participant')
         if (err instanceof Yup.ValidationError) {
           const errors = getValidationErrors(err)
           formRef.current?.setErrors(errors)
@@ -110,12 +108,12 @@ export const CertificateForm: React.FC<Props> = ({ event, closeAccordion }) => {
         }
         addToast({
           type: 'error',
-          title: 'Erro ao adicionar a participação',
+          title: 'Erro ao cadastrar a participação',
           description: err
         })
       }
     },
-    [addToast, handleAdd, clearSelect, focusSelect]
+    [addToast, event?.id, onParticipantSaved]
   )
 
   const handleSelectActivity = useCallback(data => {
@@ -149,7 +147,7 @@ export const CertificateForm: React.FC<Props> = ({ event, closeAccordion }) => {
   const loadActivities = useCallback(
     async search => {
       const response = await api.get<{ data: IActivity[] }>(
-        `tipos-certificado/${event?.id}/activities`,
+        `events/${event?.id}/activities`,
         {
           params: { search, sort_by: 'name', order_by: 'ASC' }
         }
@@ -200,18 +198,25 @@ export const CertificateForm: React.FC<Props> = ({ event, closeAccordion }) => {
     </Group>
   )
 
-  const loadParticipants = useCallback(async search => {
-    const response = await api.get<{ data: IParticipant[] }>('/participants', {
-      params: { search, sort_by: 'name', order_by: 'ASC' }
-    })
+  const handleApplyFilters = useCallback(
+    (nextDraft?: Record<string, any>) => {
+      participantsRequest.resetPage()
+      filtersState.apply(nextDraft)
+    },
+    [filtersState, participantsRequest]
+  )
 
-    const data = []
+  const handleClearFilters = useCallback(() => {
+    participantsRequest.resetPage()
+    filtersState.clear()
+  }, [filtersState, participantsRequest])
 
-    response.data?.data?.forEach(participant => {
-      data.push(participant)
-    })
-    return data
-  }, [])
+  const handleDebouncedFilter = useCallback(
+    (name: string, value: string) => {
+      handleApplyFilters({ ...filtersState.draft, [name]: value })
+    },
+    [filtersState.draft, handleApplyFilters]
+  )
 
   return (
     <Form
@@ -295,151 +300,78 @@ export const CertificateForm: React.FC<Props> = ({ event, closeAccordion }) => {
         <h2>Quem participou?</h2>
       </header>
       <Section paddingBottom="md">
-        <Grid cols={2}>
-          <AsyncSelect
-            marginBottom="md"
-            formRef={formRef}
-            name="participant"
-            loadOptions={loadParticipants}
-            handleOnSelect={handleParticipantSelect}
-            components={{
-              Control: ({ children, ...rest }: any) => (
-                <components.Control {...rest}>
-                  <>
-                    <IconArea>
-                      <FiUsers size={20} />
-                    </IconArea>
-                    {children}
-                  </>
-                </components.Control>
-              ),
-              Option: props => (
-                <components.Option {...props}>
-                  <TitleOption>{capitalize(props.data?.name)}</TitleOption>
-                  <Grid cols={2}>
-                    <InfoOption>
-                      <FiCreditCard size={18} />
-                      {props.data?.personal_data?.cpf}
-                    </InfoOption>
-                    <InfoOption>
-                      <FiMail size={18} />
-                      {props.data?.email}
-                    </InfoOption>
-                    <InfoOption>
-                      <FiCalendar size={18} />
-                      {props.data?.personal_data?.dob}
-                    </InfoOption>
-                    <InfoOption>
-                      <FiClock size={18} />
-                      {new Date(props.data?.updated_at).toLocaleString()}
-                    </InfoOption>
-                  </Grid>
-                </components.Option>
-              )
-            }}
+        <AdvancedFilters
+          activeCount={filtersState.activeCount}
+          isLoading={participantsRequest.isValidating}
+          resultsCount={participantsRequest.response?.headers['x-total-count']}
+          onApply={() => handleApplyFilters()}
+          onClear={handleClearFilters}
+        >
+          <FilterInput
+            name="search"
+            placeholder="Buscar por nome"
+            label="Nome"
+            icon={FiSearch}
+            value={filtersState.draft.search}
+            onChangeValue={filtersState.setField}
+            onDebouncedChange={handleDebouncedFilter}
           />
-        </Grid>
-        {isEmpty ? (
-          <Alert icon={FiAlertCircle} size="md" type="info">
-            Use o campo para adicionar participantes na atividade
-          </Alert>
-        ) : (
-          <>
-            <Grid cols={4} marginBottom="md">
-              {certificates?.map(
-                (certificate, index) =>
-                  (showAll || index < 4) && (
-                    <div key={index}>
-                      <AccordionCard
-                        info={
-                          <CertificateInfo
-                            eventId={event.id}
-                            certificate={certificate}
-                          />
-                        }
-                      >
-                        <main>
-                          <Alert
-                            marginBottom="xs"
-                            size="sm"
-                            icon={FiCreditCard}
-                          >
-                            {certificate?.participant?.personal_data?.cpf}
-                          </Alert>
-                          {certificate?.participant?.email && (
-                            <Alert marginBottom="xs" size="sm" icon={FiMail}>
-                              {certificate?.participant?.email}
-                            </Alert>
-                          )}
-                          <Alert size="sm" marginBottom="xs" icon={FiCalendar}>
-                            {certificate?.participant?.personal_data?.dob}
-                          </Alert>
-                          <Alert size="sm" icon={FiClock}>
-                            {new Date(
-                              certificate?.participant?.updated_at
-                            ).toLocaleString()}
-                          </Alert>
-                        </main>
-                      </AccordionCard>
-                    </div>
-                  )
-              )}
-            </Grid>
-            <Alert marginBottom="sm" icon={FiAlertCircle} size="md" type="info">
-              Exibindo{' '}
-              <b>
-                últimos{' '}
-                {!showAll && certificates.length > 4 ? 4 : certificates.length}{' '}
-              </b>
-              participantes adicionados. Até agora{' '}
-              <b>foram adicionados {certificates.length}</b>.
-            </Alert>
-            {certificates.length > 4 && (
-              <Button
-                size="small"
-                color="secondary"
-                ghost
-                inline
-                onClick={() => {
-                  setShowAll(oldValue => !oldValue)
-                }}
-                type="button"
-              >
-                {showAll ? (
-                  <>
-                    <FiChevronUp size={20} />
-                    <span>Mostrar menos</span>
-                  </>
-                ) : (
-                  <>
-                    <FiChevronDown size={20} />
-                    <span>Mostrar mais</span>
-                  </>
-                )}
-              </Button>
-            )}
-          </>
-        )}
+          <FilterInput
+            name="cpf"
+            placeholder="Buscar por CPF"
+            label="CPF"
+            icon={FiCreditCard}
+            value={filtersState.draft.cpf}
+            onChangeValue={filtersState.setField}
+            onDebouncedChange={handleDebouncedFilter}
+          />
+          <FilterInput
+            name="email"
+            placeholder="Buscar por e-mail"
+            label="E-mail"
+            icon={FiAtSign}
+            value={filtersState.draft.email}
+            onChangeValue={filtersState.setField}
+            onDebouncedChange={handleDebouncedFilter}
+          />
+        </AdvancedFilters>
+        <PaginatedTable request={participantsRequest}>
+          <thead>
+            <tr>
+              <th>Nome</th>
+              <th>CPF</th>
+              <th>Email</th>
+              <th>Data Nascimento</th>
+              <th style={{ width: 32 }} />
+            </tr>
+          </thead>
+          <tbody>
+            {participantsRequest.data?.data?.map(participant => (
+              <tr key={participant.id}>
+                <td>{capitalize(participant.name)}</td>
+                <td>{maskCpf(participant.personal_data?.cpf)}</td>
+                <td>{maskEmail(participant.email)}</td>
+                <td>{maskDob(participant.personal_data?.dob)}</td>
+                <td>
+                  <TableRow>
+                    <Button
+                      type="button"
+                      ghost
+                      inline
+                      square
+                      color="success"
+                      size="small"
+                      onClick={() => handleParticipantSelect(participant)}
+                    >
+                      <FiPlus size={20} />
+                    </Button>
+                  </TableRow>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </PaginatedTable>
       </Section>
-      <Footer>
-        <div>
-          <Button
-            size="default"
-            color="secondary"
-            outline
-            onClick={() => {
-              formRef.current.reset()
-              formRef.current.setErrors({})
-              handleReset()
-              closeAccordion()
-            }}
-            type="button"
-          >
-            <FiX size={20} />
-            <span>Fechar</span>
-          </Button>
-        </div>
-      </Footer>
     </Form>
   )
 }
