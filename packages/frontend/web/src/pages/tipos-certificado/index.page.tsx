@@ -159,7 +159,7 @@ const Certificacoes: React.FC = () => {
               <tr
                 key={event?.id}
                 onClick={() => {
-                  router.push(`tipos-certificado/${event?.id}/info`)
+                  router.push(`/tipos-certificado/${event?.id}/info`)
                 }}
               >
                 <td>{event.type}</td>
@@ -184,7 +184,7 @@ const Certificacoes: React.FC = () => {
                       color="secondary"
                       size="small"
                       onClick={() => {
-                        router.push(`tipos-certificado/${event?.id}/info`)
+                        router.push(`/tipos-certificado/${event?.id}/info`)
                       }}
                     >
                       <FiInfo size={20} />

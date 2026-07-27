@@ -130,7 +130,9 @@ export const TipoCertificadoModal: React.FC<Props> = ({
 
         if (type === 'add') {
           const response = await api.post('tipos-certificado', payload)
-          router.push(`tipos-certificado/${response.data?.data?.event?.id}/info`)
+          router.push(
+            `/tipos-certificado/${response.data?.data?.event?.id}/info`
+          )
         } else {
           const response = await api.put(`tipos-certificado/${event?.id}`, payload)
           setEvent(response.data?.data?.event)

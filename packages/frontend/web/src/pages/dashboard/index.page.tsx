@@ -167,7 +167,7 @@ const Home: React.FC = () => {
                       size="small"
                       type="button"
                       onClick={() => {
-                        router.push(`/tipos-certificado/${event?.id}/certificates`)
+                        router.push(`/tipos-certificado/${event?.id}/models`)
                       }}
                     >
                       <FiFileText size={20} />
@@ -178,7 +178,7 @@ const Home: React.FC = () => {
                       size="small"
                       type="button"
                       onClick={() => {
-                        router.push(`/publish/${event?.id}`)
+                        router.push(`/tipos-certificado/${event?.id}/publish`)
                       }}
                     >
                       <FiSend size={20} />
@@ -235,7 +235,7 @@ const Home: React.FC = () => {
               buttonName="Adicionar"
               buttonIcon={<FiPlusCircle size={20} />}
               onButtonClick={() => {
-                router.push(`/tipos-certificado/${event?.id}/participants`)
+                router.push(`/tipos-certificado/${event?.id}/certificates`)
               }}
             />
           </div>
@@ -293,7 +293,7 @@ const Home: React.FC = () => {
               <tr
                 key={event?.id}
                 onClick={() => {
-                  router.push(`tipos-certificado/${event?.id}/info`)
+                  router.push(`/tipos-certificado/${event?.id}/info`)
                 }}
               >
                 <td>{`${event.name} (${event.initials})`}</td>
@@ -313,7 +313,7 @@ const Home: React.FC = () => {
                       color="secondary"
                       size="small"
                       onClick={() => {
-                        router.push(`tipos-certificado/${event?.id}/info`)
+                        router.push(`/tipos-certificado/${event?.id}/info`)
                       }}
                     >
                       <FiInfo size={20} />
