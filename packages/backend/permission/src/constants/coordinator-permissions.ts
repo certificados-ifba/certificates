@@ -1,9 +1,9 @@
 export const coordinatorPermissions = [
   'user_get_by_id',
   'user_confirm',
-  'event_list',
-  'event_get_by_id',
-  'event_publish_by_id',
+  'tipo_certificado_list',
+  'tipo_certificado_get_by_id',
+  'tipo_certificado_publish_by_id',
   'generic_list',
   'participant_create',
   'participant_list',
