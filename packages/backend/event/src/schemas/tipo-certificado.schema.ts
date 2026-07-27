@@ -26,10 +26,7 @@ export const TipoCertificadoSchema = new mongoose.Schema(
       type: String,
       required: [true, 'Year can not be empty']
     },
-    edition: {
-      type: String,
-      required: [true, 'Edition can not be empty']
-    },
+    edition: String,
     start_date: {
       type: Date,
       required: [true, 'Start date can not be empty']

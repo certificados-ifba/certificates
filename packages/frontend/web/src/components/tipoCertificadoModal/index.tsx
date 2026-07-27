@@ -111,8 +111,8 @@ export const TipoCertificadoModal: React.FC<Props> = ({
       setLoading(true)
       const schema = Yup.object().shape({
         name: Yup.string().required('A certificação precisa ter um nome'),
-        initials: Yup.string().required('Por favor, digite a sigla'),
-        edition: Yup.string().required('Por favor, digite a edição'),
+        initials: Yup.string(),
+        edition: Yup.string(),
         local: Yup.string().required('Por favor, digite o local'),
         user: Yup.string().required(
           'Você precisa selecionar um coordenador'
