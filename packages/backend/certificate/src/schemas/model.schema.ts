@@ -11,7 +11,7 @@ export const ModelSchema = new mongoose.Schema(
   {
     event: {
       type: mongoose.Schema.Types.ObjectId,
-      required: [true, 'Event can not be empty']
+      required: [true, 'TipoCertificado can not be empty']
     },
     name: {
       type: String,

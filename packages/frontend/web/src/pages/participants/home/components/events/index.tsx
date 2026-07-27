@@ -24,7 +24,7 @@ export const Events: React.FC<Props> = ({ token, loading }) => {
   const [orderEvent, setOrderEvent] = useState<'' | 'ASC' | 'DESC'>('ASC')
 
   const requestEvent = usePaginatedRequest<any>({
-    url: 'events',
+    url: 'tipos-certificado',
     headers: { authorization: `Bearer ${token}` },
     params:
       filtersEvent && orderEvent !== ''

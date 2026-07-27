@@ -33,7 +33,7 @@ const Login: React.FC = () => {
           </Button>
           <Button
             onClick={() => {
-              router.push(`participants/login`)
+              router.push(`/participants/login`)
             }}
             size="small"
             type="button"

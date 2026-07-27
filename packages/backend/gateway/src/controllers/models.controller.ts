@@ -25,7 +25,7 @@ import { Response } from 'express'
 import { Authorization } from '../decorators/authorization.decorator'
 import { Permission } from '../decorators/permission.decorator'
 import { IAuthorizedRequest } from '../interfaces/common/authorized-request.interface'
-import { IServiceEventGetByIdResponse } from '../interfaces/event/service-event-get-by-id-response.interface'
+import { IServiceTipoCertificadoGetByIdResponse } from '../interfaces/tipo-certificado/service-tipo-certificado-get-by-id-response.interface'
 import { CreateModelResponseDto } from '../interfaces/model/dto/create-model-response.dto'
 import { CreateModelDto } from '../interfaces/model/dto/create-model.dto'
 import { DeleteModelResponseDto } from '../interfaces/model/dto/delete-model-response.dto'
@@ -38,14 +38,14 @@ import { IServiceModelDeleteResponse } from '../interfaces/model/service-model-d
 import { IServiceModelListResponse } from '../interfaces/model/service-model-list-response.interface'
 import { IServiceModelUpdateResponse } from '../interfaces/model/service-model-update-response.interface'
 
-@Controller('events/:event_id/models')
+@Controller(['events/:event_id/models', 'tipos-certificado/:event_id/models'])
 @ApiBearerAuth('JWT')
 @ApiTags('models')
 export class ModelsController {
   constructor(
     @Inject('CERTIFICATE_SERVICE')
     private readonly certificateServiceClient: ClientProxy,
-    @Inject('EVENT_SERVICE')
+    @Inject('TIPO_CERTIFICADO_SERVICE')
     private readonly eventServiceClient: ClientProxy
   ) { }
 
@@ -64,8 +64,8 @@ export class ModelsController {
   ): Promise<ListModelResponseDto> {
     const { page = 1, per_page = 10, sort_by, order_by } = query
 
-    const eventResponse: IServiceEventGetByIdResponse = await this.eventServiceClient
-      .send('event_get_by_id', {
+    const eventResponse: IServiceTipoCertificadoGetByIdResponse = await this.eventServiceClient
+      .send('tipo_certificado_get_by_id', {
         id: params.event_id,
         user: request.user
       })
@@ -114,8 +114,8 @@ export class ModelsController {
   ): Promise<CreateModelResponseDto> {
     const { name, pages, criterions, is_default } = certificateRequest
 
-    const eventResponse: IServiceEventGetByIdResponse = await this.eventServiceClient
-      .send('event_get_by_id', {
+    const eventResponse: IServiceTipoCertificadoGetByIdResponse = await this.eventServiceClient
+      .send('tipo_certificado_get_by_id', {
         id: params.event_id,
         user: request.user
       })

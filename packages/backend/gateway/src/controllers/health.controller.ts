@@ -46,7 +46,7 @@ export class HealthController {
       async () =>
         this.microservice.pingCheck(
           'event',
-          this.configService.get('eventService')
+          this.configService.get('tipoCertificadoService')
         ),
       async () =>
         this.microservice.pingCheck(

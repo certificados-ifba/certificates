@@ -1,4 +1,4 @@
-import { IEvent } from './IEvent'
+import { ITipoCertificado } from './ITipoCertificado'
 import { IGeneric } from './IGeneric'
 
 export interface IActivity {
@@ -8,5 +8,5 @@ export interface IActivity {
   workload: string
   start_date: string
   end_date: string
-  event: IEvent
+  event: ITipoCertificado
 }

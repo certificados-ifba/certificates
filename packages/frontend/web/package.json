@@ -18,6 +18,7 @@
     "axios": "^0.21.1",
     "babel-plugin-styled-components": "^2.0.6",
     "caniuse-lite": "^1.0.30001255",
+    "canvg": "^3.0.11",
     "cookie": "^0.4.1",
     "draft-js": "^0.11.7",
     "draftjs-to-html": "^0.9.1",

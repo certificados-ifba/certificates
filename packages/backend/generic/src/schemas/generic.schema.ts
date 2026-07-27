@@ -17,6 +17,10 @@ export const GenericSchema = new mongoose.Schema(
       lowercase: true,
       trim: true,
       required: [true, 'Name can not be empty']
+    },
+    icon: {
+      type: String,
+      trim: true
     }
   },
   {

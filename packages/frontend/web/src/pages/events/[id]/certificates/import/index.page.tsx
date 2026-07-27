@@ -27,7 +27,7 @@ const ImportCertificates: React.FC = () => {
     const loadData = async () => {
       try {
         const { data: dataEvent } = await api.get<{ data: IEvent }>(
-          `events/${id}`
+          `tipos-certificado/${id}`
         )
 
         const event = dataEvent?.data
@@ -93,7 +93,7 @@ const ImportCertificates: React.FC = () => {
       />
       {event ? (
         <Import
-          url={`events/${id}/certificates`}
+          url={`tipos-certificado/${id}/certificates`}
           filename="importar-certificados"
           schema={getCertificateSchema(event.start_date, event.end_date)}
           dataSheet={dataSheet(

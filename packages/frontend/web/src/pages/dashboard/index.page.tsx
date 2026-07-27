@@ -14,7 +14,7 @@ import {
   TableRow,
   Tag
 } from '@components'
-import { IEvent, IUser, statusEvent } from '@dtos'
+import { ITipoCertificado, IUser, statusTipoCertificado } from '@dtos'
 import { withAuth } from '@hocs'
 import { useAuth } from '@providers'
 import { api, usePaginatedRequest } from '@services'
@@ -40,7 +40,7 @@ import {
 
 const Home: React.FC = () => {
   const [user, setUser] = useState<IUser>()
-  const [events, setEvents] = useState<IEvent[]>([])
+  const [events, setEvents] = useState<ITipoCertificado[]>([])
   const [dropActive, setDropActive] = useState(false)
   const { user: userAuth } = useAuth()
   const [filters, setFilters] = useState({ per_page: 5 })
@@ -69,7 +69,7 @@ const Home: React.FC = () => {
   formRef.current?.setData({ event: '1' })
 
   const request = usePaginatedRequest<any>({
-    url: 'events',
+    url: 'tipos-certificado',
     params:
       filters && order !== ''
         ? Object.assign(filters, { sort_by: column, order_by: order })
@@ -88,7 +88,7 @@ const Home: React.FC = () => {
   )
 
   const loadEvents = useCallback(async search => {
-    const response = await api.get<{ data: IEvent[] }>('events', {
+    const response = await api.get<{ data: ITipoCertificado[] }>('tipos-certificado', {
       params: { search, sort_by: 'end_date', order_by: 'DESC' }
     })
 
@@ -154,7 +154,7 @@ const Home: React.FC = () => {
                       size="small"
                       type="button"
                       onClick={() => {
-                        router.push(`/events/${event?.id}/info`)
+                        router.push(`/tipos-certificado/${event?.id}/info`)
                       }}
                     >
                       <FiEdit size={20} />
@@ -167,7 +167,7 @@ const Home: React.FC = () => {
                       size="small"
                       type="button"
                       onClick={() => {
-                        router.push(`/events/${event?.id}/certificates`)
+                        router.push(`/tipos-certificado/${event?.id}/models`)
                       }}
                     >
                       <FiFileText size={20} />
@@ -178,7 +178,7 @@ const Home: React.FC = () => {
                       size="small"
                       type="button"
                       onClick={() => {
-                        router.push(`/publish/${event?.id}`)
+                        router.push(`/tipos-certificado/${event?.id}/publish`)
                       }}
                     >
                       <FiSend size={20} />
@@ -235,7 +235,7 @@ const Home: React.FC = () => {
               buttonName="Adicionar"
               buttonIcon={<FiPlusCircle size={20} />}
               onButtonClick={() => {
-                router.push(`/events/${event?.id}/participants`)
+                router.push(`/tipos-certificado/${event?.id}/certificates`)
               }}
             />
           </div>
@@ -261,7 +261,7 @@ const Home: React.FC = () => {
               buttonName="Adicionar"
               buttonIcon={<FiPlusCircle size={20} />}
               onButtonClick={() => {
-                router.push(`/events/${event?.id}/activities`)
+                router.push(`/tipos-certificado/${event?.id}/activities`)
               }}
             />
           </div>
@@ -293,13 +293,13 @@ const Home: React.FC = () => {
               <tr
                 key={event?.id}
                 onClick={() => {
-                  router.push(`events/${event?.id}/info`)
+                  router.push(`/tipos-certificado/${event?.id}/info`)
                 }}
               >
                 <td>{`${event.name} (${event.initials})`}</td>
                 <td>
-                  <Tag size="lg" color={statusEvent[event.status]?.color}>
-                    {statusEvent[event.status]?.text}
+                  <Tag size="lg" color={statusTipoCertificado[event.status]?.color}>
+                    {statusTipoCertificado[event.status]?.text}
                   </Tag>
                 </td>
                 <td>{formatDate(event.start_date)}</td>
@@ -313,7 +313,7 @@ const Home: React.FC = () => {
                       color="secondary"
                       size="small"
                       onClick={() => {
-                        router.push(`events/${event?.id}/info`)
+                        router.push(`/tipos-certificado/${event?.id}/info`)
                       }}
                     >
                       <FiInfo size={20} />

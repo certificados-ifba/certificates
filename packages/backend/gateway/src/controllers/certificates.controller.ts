@@ -30,10 +30,10 @@ import { CertificateValidateDto } from '../interfaces/certificate/dto/certificat
 import { CreateCertificateResponseDto } from '../interfaces/certificate/dto/create-certificate-response.dto'
 import { CreateCertificateDto } from '../interfaces/certificate/dto/create-certificate.dto'
 import { DeleteCertificateResponseDto } from '../interfaces/certificate/dto/delete-certificate-response.dto'
-import { EventIdDto } from '../interfaces/certificate/dto/event-id.dto'
+import { TipoCertificadoIdDto } from '../interfaces/certificate/dto/event-id.dto'
 import { ListCertificateResponseDto } from '../interfaces/certificate/dto/list-certificate-response.dto'
 import { ListCertificateDto } from '../interfaces/certificate/dto/list-certificate.dto'
-// import { EventIdDto } from '../interfaces/certificate/dto/event-id.dto'
+// import { TipoCertificadoIdDto } from '../interfaces/certificate/dto/event-id.dto'
 // import { ListCertificateResponseDto } from '../interfaces/certificate/dto/list-certificate-response.dto'
 // import { ListCertificateDto } from '../interfaces/certificate/dto/list-certificate.dto'
 import { IServiceCertificateCreateResponse } from '../interfaces/certificate/service-certificate-create-response.interface'
@@ -42,7 +42,7 @@ import { IServiceCertificateListResponse } from '../interfaces/certificate/servi
 import { IServiceCertificateValidateResponse } from '../interfaces/certificate/service-certificate-validate-response.interface'
 // import { IServiceCertificateListResponse } from '../interfaces/certificate/service-certificate-list-response.interface'
 import { IAuthorizedRequest } from '../interfaces/common/authorized-request.interface'
-import { IServiceEventGetByIdResponse } from '../interfaces/event/service-event-get-by-id-response.interface'
+import { IServiceTipoCertificadoGetByIdResponse } from '../interfaces/tipo-certificado/service-tipo-certificado-get-by-id-response.interface'
 import { IServiceParticipantGetByIdResponse } from '../interfaces/participant/service-participant-get-by-id-response.interface'
 // import capitalize from '../utils/capitalize'
 
@@ -53,7 +53,7 @@ export class CertificatesController {
   constructor(
     @Inject('CERTIFICATE_SERVICE')
     private readonly certificateServiceClient: ClientProxy,
-    @Inject('EVENT_SERVICE')
+    @Inject('TIPO_CERTIFICADO_SERVICE')
     private readonly eventServiceClient: ClientProxy,
     @Inject('USER_SERVICE')
     private readonly userServiceClient: ClientProxy
@@ -91,7 +91,10 @@ export class CertificatesController {
     }
   }
 
-  @Get('events/:event_id/certificates')
+  @Get([
+    'events/:event_id/certificates',
+    'tipos-certificado/:event_id/certificates'
+  ])
   @Authorization(true)
   @Permission('certificate_list')
   @ApiOkResponse({
@@ -100,7 +103,7 @@ export class CertificatesController {
   })
   public async getCertificates(
     @Req() request: IAuthorizedRequest,
-    @Param() params: EventIdDto,
+    @Param() params: TipoCertificadoIdDto,
     @Res({ passthrough: true }) res: Response,
     @Query() query: ListCertificateDto
   ): Promise<ListCertificateResponseDto> {
@@ -121,8 +124,8 @@ export class CertificatesController {
       order_by
     } = query
 
-    const eventResponse: IServiceEventGetByIdResponse = await this.eventServiceClient
-      .send('event_get_by_id', {
+    const eventResponse: IServiceTipoCertificadoGetByIdResponse = await this.eventServiceClient
+      .send('tipo_certificado_get_by_id', {
         id: params.event_id,
         user: request.user
       })
@@ -168,7 +171,10 @@ export class CertificatesController {
     }
   }
 
-  @Post('events/:event_id/certificates')
+  @Post([
+    'events/:event_id/certificates',
+    'tipos-certificado/:event_id/certificates'
+  ])
   @Authorization(true)
   @Permission('certificate_create')
   @ApiCreatedResponse({
@@ -222,8 +228,8 @@ export class CertificatesController {
       )
     }
 
-    const eventResponse: IServiceEventGetByIdResponse = await this.eventServiceClient
-      .send('event_get_by_id', {
+    const eventResponse: IServiceTipoCertificadoGetByIdResponse = await this.eventServiceClient
+      .send('tipo_certificado_get_by_id', {
         id: params.event_id,
         user: request.user
       })
@@ -274,7 +280,10 @@ export class CertificatesController {
     }
   }
 
-  @Delete('events/:event_id/certificates/:id')
+  @Delete([
+    'events/:event_id/certificates/:id',
+    'tipos-certificado/:event_id/certificates/:id'
+  ])
   @Authorization(true)
   @Permission('certificate_delete_by_id')
   @ApiOkResponse({

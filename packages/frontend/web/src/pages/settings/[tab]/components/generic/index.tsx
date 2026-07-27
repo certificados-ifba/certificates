@@ -8,6 +8,7 @@ import {
   TableRow,
   Tooltip
 } from '@components'
+import { getIcon } from '@components/tipoSelectorModal/iconMap'
 import { IGeneric } from '@dtos'
 import { useAuth, useToast } from '@providers'
 import { api, usePaginatedRequest } from '@services'
@@ -23,9 +24,16 @@ interface Props {
   plural: string
   url: string
   icon: React.ComponentType<IconBaseProps>
+  showIconPicker?: boolean
 }
 
-export const Generic: React.FC<Props> = ({ name, plural, url, icon }) => {
+export const Generic: React.FC<Props> = ({
+  name,
+  plural,
+  url,
+  icon,
+  showIconPicker = false
+}) => {
   const [show, setShow] = useState(false)
   const [generic, setGeneric] = useState<IGeneric>(null)
   const [filters, setFilters] = useState(null)
@@ -132,6 +140,7 @@ export const Generic: React.FC<Props> = ({ name, plural, url, icon }) => {
       <PaginatedTable request={request}>
         <thead>
           <tr>
+            {showIconPicker && <th style={{ width: 48 }}>Ícone</th>}
             <th onClick={() => handleOrder('name')}>
               <Column order={order} selected={column === 'name'}>
                 Nome
@@ -141,8 +150,15 @@ export const Generic: React.FC<Props> = ({ name, plural, url, icon }) => {
           </tr>
         </thead>
         <tbody>
-          {request.data?.data?.map(generic => (
+          {request.data?.data?.map(generic => {
+            const RowIcon = getIcon(generic.icon)
+            return (
             <tr key={generic?.id}>
+              {showIconPicker && (
+                <td>
+                  <RowIcon size={20} />
+                </td>
+              )}
               <td>{generic.name}</td>
               {show && (
                 <td>
@@ -182,7 +198,8 @@ export const Generic: React.FC<Props> = ({ name, plural, url, icon }) => {
                 </td>
               )}
             </tr>
-          ))}
+            )
+          })}
         </tbody>
       </PaginatedTable>
       <GenericModal
@@ -194,6 +211,7 @@ export const Generic: React.FC<Props> = ({ name, plural, url, icon }) => {
         icon={icon}
         name={name}
         url={url}
+        showIconPicker={showIconPicker}
       />
       <DeleteModal
         name={name}

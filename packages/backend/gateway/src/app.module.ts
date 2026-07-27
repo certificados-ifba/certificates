@@ -5,8 +5,9 @@ import { TerminusModule } from '@nestjs/terminus'
 
 import { ActivitiesController } from './controllers/activities.controller'
 import { ActivityTypesController } from './controllers/activity-types.controller'
+import { CertificationTypesController } from './controllers/certification-types.controller'
 import { CertificatesController } from './controllers/certificates.controller'
-import { EventsController } from './controllers/events.controller'
+import { TiposCertificadoController } from './controllers/tipos-certificado.controller'
 import { FunctionsController } from './controllers/functions.controller'
 import { HealthController } from './controllers/health.controller'
 import { InfosController } from './controllers/infos.controller'
@@ -32,8 +33,9 @@ import { PermissionGuard } from './services/guards/permission.guard'
   controllers: [
     ActivitiesController,
     ActivityTypesController,
+    CertificationTypesController,
     CertificatesController,
-    EventsController,
+    TiposCertificadoController,
     FunctionsController,
     HealthController,
     InfosController,
@@ -73,9 +75,9 @@ import { PermissionGuard } from './services/guards/permission.guard'
       inject: [ConfigService]
     },
     {
-      provide: 'EVENT_SERVICE',
+      provide: 'TIPO_CERTIFICADO_SERVICE',
       useFactory: (configService: ConfigService) => {
-        return ClientProxyFactory.create(configService.get('eventService'))
+        return ClientProxyFactory.create(configService.get('tipoCertificadoService'))
       },
       inject: [ConfigService]
     },

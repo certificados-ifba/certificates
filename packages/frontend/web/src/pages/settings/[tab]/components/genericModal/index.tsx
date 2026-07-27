@@ -6,6 +6,7 @@ import {
   MainModal,
   Modal
 } from '@components'
+import { getIcon, ICON_OPTIONS } from '@components/tipoSelectorModal/iconMap'
 import { IGeneric } from '@dtos'
 import { useToast } from '@providers'
 import { api, PaginatedRequest } from '@services'
@@ -15,6 +16,7 @@ import { getValidationErrors } from '@utils'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { IconBaseProps } from 'react-icons'
 import { FiCheck, FiEdit, FiPlus, FiUserPlus, FiX } from 'react-icons/fi'
+import styled from 'styled-components'
 import * as Yup from 'yup'
 
 interface Props {
@@ -26,7 +28,42 @@ interface Props {
   generic?: IGeneric
   request: PaginatedRequest<any, any>
   icon: React.ComponentType<IconBaseProps>
+  showIconPicker?: boolean
 }
+
+const IconPickerLabel = styled.label`
+  display: block;
+  margin: 1rem 0 0.5rem;
+  font-size: 0.875rem;
+  color: ${({ theme }) => theme.colors.darkTint};
+`
+
+const IconGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(48px, 1fr));
+  gap: 0.5rem;
+  max-height: 200px;
+  overflow-y: auto;
+`
+
+const IconOption = styled.button<{ selected: boolean }>`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem;
+  border-radius: 8px;
+  border: 2px solid
+    ${({ selected, theme }) =>
+      selected ? theme.colors.primary : 'transparent'};
+  background: ${({ selected, theme }) =>
+    selected ? theme.colors.lightShade : theme.colors.light};
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+
+  &:hover {
+    border-color: ${({ theme }) => theme.colors.primary};
+  }
+`
 
 export const GenericModal: React.FC<Props> = ({
   type,
@@ -36,9 +73,11 @@ export const GenericModal: React.FC<Props> = ({
   request,
   icon: Icon,
   name,
-  url
+  url,
+  showIconPicker = false
 }) => {
   const [loading, setLoading] = useState(false)
+  const [selectedIcon, setSelectedIcon] = useState<string>(ICON_OPTIONS[0])
   const { addToast } = useToast()
 
   const formRef = useRef<FormHandles>(null)
@@ -61,11 +100,13 @@ export const GenericModal: React.FC<Props> = ({
           abortEarly: false
         })
 
+        const payload = showIconPicker ? { ...data, icon: selectedIcon } : data
+
         if (type === 'add') {
-          await api.post(url, data)
+          await api.post(url, payload)
         } else {
-          delete data.cpf
-          await api.put(`${url}/${generic?.id}`, data)
+          delete payload.cpf
+          await api.put(`${url}/${generic?.id}`, payload)
         }
 
         addToast({
@@ -93,14 +134,26 @@ export const GenericModal: React.FC<Props> = ({
         })
       }
     },
-    [type, generic?.id, addToast, request, handleCloseModal, name, url]
+    [
+      type,
+      generic?.id,
+      addToast,
+      request,
+      handleCloseModal,
+      name,
+      url,
+      showIconPicker,
+      selectedIcon
+    ]
   )
 
   useEffect(() => {
     if (generic) {
       formRef.current?.setData(generic)
+      setSelectedIcon(generic.icon || ICON_OPTIONS[0])
     } else {
       formRef.current?.setData({})
+      setSelectedIcon(ICON_OPTIONS[0])
     }
   }, [generic, openModal])
 
@@ -130,6 +183,27 @@ export const GenericModal: React.FC<Props> = ({
             icon={Icon}
             disabled={loading}
           />
+          {showIconPicker && (
+            <>
+              <IconPickerLabel>Ícone</IconPickerLabel>
+              <IconGrid>
+                {ICON_OPTIONS.map(iconName => {
+                  const OptionIcon = getIcon(iconName)
+                  return (
+                    <IconOption
+                      key={iconName}
+                      type="button"
+                      selected={selectedIcon === iconName}
+                      onClick={() => setSelectedIcon(iconName)}
+                      disabled={loading}
+                    >
+                      <OptionIcon size={20} />
+                    </IconOption>
+                  )
+                })}
+              </IconGrid>
+            </>
+          )}
         </MainModal>
         <FooterModal>
           <Button

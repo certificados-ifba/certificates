@@ -18,7 +18,7 @@ export class ResumeController {
   constructor(
     @Inject('USER_SERVICE')
     private readonly userServiceClient: ClientProxy,
-    @Inject('EVENT_SERVICE')
+    @Inject('TIPO_CERTIFICADO_SERVICE')
     private readonly eventServiceClient: ClientProxy,
     @Inject('CERTIFICATE_SERVICE')
     private readonly certificateServiceClient: ClientProxy

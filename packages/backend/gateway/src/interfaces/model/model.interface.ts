@@ -1,4 +1,4 @@
-import { IEvent } from '../event/event.interface'
+import { ITipoCertificado } from '../tipo-certificado/tipo-certificado.interface'
 import { IGeneric } from '../generic/generic.interface'
 
 interface ILayout {
@@ -25,7 +25,7 @@ export interface ICriterion {
 
 export interface IModel {
   id: string
-  event: IEvent
+  event: ITipoCertificado
   name: string
   pages: IPage[]
   criterions: ICriterion[]
