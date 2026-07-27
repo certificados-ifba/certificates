@@ -91,7 +91,10 @@ export class CertificatesController {
     }
   }
 
-  @Get('events/:event_id/certificates')
+  @Get([
+    'events/:event_id/certificates',
+    'tipos-certificado/:event_id/certificates'
+  ])
   @Authorization(true)
   @Permission('certificate_list')
   @ApiOkResponse({
@@ -168,7 +171,10 @@ export class CertificatesController {
     }
   }
 
-  @Post('events/:event_id/certificates')
+  @Post([
+    'events/:event_id/certificates',
+    'tipos-certificado/:event_id/certificates'
+  ])
   @Authorization(true)
   @Permission('certificate_create')
   @ApiCreatedResponse({
@@ -274,7 +280,10 @@ export class CertificatesController {
     }
   }
 
-  @Delete('events/:event_id/certificates/:id')
+  @Delete([
+    'events/:event_id/certificates/:id',
+    'tipos-certificado/:event_id/certificates/:id'
+  ])
   @Authorization(true)
   @Permission('certificate_delete_by_id')
   @ApiOkResponse({

@@ -51,7 +51,10 @@ import capitalize from '../utils/capitalize'
 // import { IServiceActivityUpdateByIdResponse } from '../interfaces/activity/service-activity-update-by-id-response.interface'
 // import { IAuthorizedRequest } from '../interfaces/common/authorized-request.interface'
 
-@Controller('events/:event_id/activities')
+@Controller([
+  'events/:event_id/activities',
+  'tipos-certificado/:event_id/activities'
+])
 @ApiBearerAuth('JWT')
 @ApiTags('activities')
 export class ActivitiesController {

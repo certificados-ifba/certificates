@@ -38,7 +38,7 @@ import { IServiceModelDeleteResponse } from '../interfaces/model/service-model-d
 import { IServiceModelListResponse } from '../interfaces/model/service-model-list-response.interface'
 import { IServiceModelUpdateResponse } from '../interfaces/model/service-model-update-response.interface'
 
-@Controller('events/:event_id/models')
+@Controller(['events/:event_id/models', 'tipos-certificado/:event_id/models'])
 @ApiBearerAuth('JWT')
 @ApiTags('models')
 export class ModelsController {
