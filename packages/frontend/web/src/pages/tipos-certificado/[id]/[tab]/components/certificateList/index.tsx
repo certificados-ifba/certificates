@@ -46,6 +46,7 @@ interface ICertificate {
   end_date: Date
   authorship_order: string
   additional_field: string
+  downloaded_at?: string | null
   created_at: Date
   updated_at: Date
 }
@@ -363,6 +364,15 @@ export const CertificateList: React.FC<Props> = ({ event, openAccordion }) => {
           filename: `certificado_${certificate.key || certificate.id}`,
           pages,
         })
+
+        try {
+          await api.patch(
+            `events/${event?.id}/certificates/${certificate.id}/download`
+          )
+          request.revalidate()
+        } catch (markErr) {
+          console.error('Erro ao marcar certificado como baixado:', markErr)
+        }
       } catch (err) {
         addToast({
           type: 'error',
@@ -371,7 +381,7 @@ export const CertificateList: React.FC<Props> = ({ event, openAccordion }) => {
         })
       }
     },
-    [addToast, event]
+    [addToast, event, request]
   )
 
   return (

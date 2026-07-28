@@ -81,6 +81,14 @@ export class CertificateService {
     return await this.CertificateModel.findOneAndDelete({ _id: id })
   }
 
+  public async markCertificateAsDownloaded(id: string): Promise<ICertificate> {
+    return await this.CertificateModel.findOneAndUpdate(
+      { _id: id },
+      { downloaded_at: new Date() },
+      { new: true }
+    )
+  }
+
   public async listCertificates({
     user,
     event,

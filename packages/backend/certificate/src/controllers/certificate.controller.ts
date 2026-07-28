@@ -7,6 +7,7 @@ import { ICertificateDeleteResponse } from '../interfaces/certificate-delete-res
 import { ICertificateIssuedResponse } from '../interfaces/certificate-issued-response.interface'
 import { ICertificateListParams } from '../interfaces/certificate-list-params.interface'
 import { ICertificateListResponse } from '../interfaces/certificate-list-response.interface'
+import { ICertificateMarkDownloadedResponse } from '../interfaces/certificate-mark-downloaded-response.interface'
 import { ICertificateValidateResponse } from '../interfaces/certificate-validate-response.interface'
 import { ICertificate } from '../interfaces/certificate.interface'
 import { CertificateService } from '../services/certificate.service'
@@ -196,6 +197,57 @@ export class CertificateController {
       result = {
         status: HttpStatus.BAD_REQUEST,
         message: 'certificate_delete_by_id_bad_request',
+        errors: null
+      }
+    }
+
+    return result
+  }
+
+  @MessagePattern('certificate_mark_downloaded')
+  public async certificateMarkDownloaded(params: {
+    id: string
+  }): Promise<ICertificateMarkDownloadedResponse> {
+    let result: ICertificateMarkDownloadedResponse
+
+    if (params && params.id) {
+      try {
+        const certificate = await this.certificateService.findCertificateById(
+          params.id
+        )
+
+        if (certificate) {
+          const updated = await this.certificateService.markCertificateAsDownloaded(
+            params.id
+          )
+          result = {
+            status: HttpStatus.OK,
+            message: 'certificate_mark_downloaded_success',
+            certificate: updated,
+            errors: null
+          }
+        } else {
+          result = {
+            status: HttpStatus.NOT_FOUND,
+            message: 'certificate_mark_downloaded_not_found',
+            certificate: null,
+            errors: null
+          }
+        }
+      } catch (e) {
+        const errorMessage = e.message || 'certificate_mark_downloaded_precondition_failed'
+        result = {
+          status: HttpStatus.PRECONDITION_FAILED,
+          message: errorMessage,
+          certificate: null,
+          errors: e.errors || { message: errorMessage }
+        }
+      }
+    } else {
+      result = {
+        status: HttpStatus.BAD_REQUEST,
+        message: 'certificate_mark_downloaded_bad_request',
+        certificate: null,
         errors: null
       }
     }

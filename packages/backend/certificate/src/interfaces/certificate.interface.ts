@@ -15,6 +15,7 @@ export interface ICertificate extends Document {
   end_date: Date
   authorship_order: string
   additional_field: string
+  downloaded_at?: Date | null
   created_at: number
   updated_at: number
 }

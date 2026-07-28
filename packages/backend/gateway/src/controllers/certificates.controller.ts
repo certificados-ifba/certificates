@@ -4,6 +4,7 @@ import {
   Get,
   Post,
   Put,
+  Patch,
   Delete,
   Param,
   Body,
@@ -39,6 +40,7 @@ import { ListCertificateDto } from '../interfaces/certificate/dto/list-certifica
 import { IServiceCertificateCreateResponse } from '../interfaces/certificate/service-certificate-create-response.interface'
 import { IServiceCertificateDeleteResponse } from '../interfaces/certificate/service-certificate-delete-response.interface'
 import { IServiceCertificateListResponse } from '../interfaces/certificate/service-certificate-list-response.interface'
+import { IServiceCertificateMarkDownloadedResponse } from '../interfaces/certificate/service-certificate-mark-downloaded-response.interface'
 import { IServiceCertificateValidateResponse } from '../interfaces/certificate/service-certificate-validate-response.interface'
 // import { IServiceCertificateListResponse } from '../interfaces/certificate/service-certificate-list-response.interface'
 import { IAuthorizedRequest } from '../interfaces/common/authorized-request.interface'
@@ -275,6 +277,44 @@ export class CertificatesController {
       message: createCertificateResponse.message,
       data: {
         certificate: createCertificateResponse.certificate
+      },
+      errors: null
+    }
+  }
+
+  @Patch([
+    'events/:event_id/certificates/:id/download',
+    'tipos-certificado/:event_id/certificates/:id/download'
+  ])
+  @Authorization(true)
+  @Permission('certificate_mark_downloaded')
+  @ApiOkResponse({
+    type: CreateCertificateResponseDto
+  })
+  public async markCertificateAsDownloaded(
+    @Param() params: CertificateIdDto
+  ): Promise<CreateCertificateResponseDto> {
+    const markResponse: IServiceCertificateMarkDownloadedResponse = await this.certificateServiceClient
+      .send('certificate_mark_downloaded', {
+        id: params.id
+      })
+      .toPromise()
+
+    if (markResponse.status !== HttpStatus.OK) {
+      throw new HttpException(
+        {
+          message: markResponse.message,
+          data: null,
+          errors: markResponse.errors
+        },
+        markResponse.status
+      )
+    }
+
+    return {
+      message: markResponse.message,
+      data: {
+        certificate: markResponse.certificate
       },
       errors: null
     }

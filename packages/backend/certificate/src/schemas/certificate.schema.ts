@@ -50,6 +50,10 @@ export const CertificateSchema = new mongoose.Schema(
     },
     additional_field: {
       type: String
+    },
+    downloaded_at: {
+      type: Date,
+      default: null
     }
   },
   {
