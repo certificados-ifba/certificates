@@ -37,8 +37,7 @@ export interface IModelData {
     layout: any
   }>
   criterions: Array<{
-    function: any
-    type_activity: any
+    activity: any
   }>
 }
 
@@ -68,12 +67,8 @@ const AddCertificate: React.FC<Props> = ({
   const initialRoles: IRole[] = (modelData?.criterions || []).map((c, index) => ({
     number: index + 1,
     activity: {
-      name: typeof c.type_activity === 'object' ? (c.type_activity?.name || '') : '',
-      id: typeof c.type_activity === 'object' ? (c.type_activity?.id || c.type_activity?.value || '') : String(c.type_activity)
-    },
-    function: {
-      name: typeof c.function === 'object' ? (c.function?.name || '') : '',
-      id: typeof c.function === 'object' ? (c.function?.id || c.function?.value || '') : String(c.function)
+      name: typeof c.activity === 'object' ? (c.activity?.name || '') : '',
+      id: typeof c.activity === 'object' ? (c.activity?.id || c.activity?.value || '') : String(c.activity)
     }
   }))
 
@@ -126,7 +121,7 @@ const AddCertificate: React.FC<Props> = ({
             type: 'error',
             title: 'Critérios ausentes',
             description:
-              'Modelos não-padrão precisam ter pelo menos um critério (função + tipo de atividade) cadastrado.'
+              'Modelos não-padrão precisam ter pelo menos um critério (atividade) cadastrado.'
           })
           setLoading(false)
           return
@@ -202,8 +197,7 @@ const AddCertificate: React.FC<Props> = ({
 
         // Coletar critérios
         const criterions = collectedRoles.map(role => ({
-            function: role.function?.value || role.function?.id || role.function,
-            type_activity: role.activity?.value || role.activity?.id || role.activity
+            activity: role.activity?.value || role.activity?.id || role.activity
           }))
 
         const payload = {
@@ -340,6 +334,7 @@ const AddCertificate: React.FC<Props> = ({
         </Section>
         <Section paddingBottom="md">
           <Roles
+            eventId={eventId}
             id={edit ? 'edit' : 'add'}
             roles={initialRoles.length > 0 ? initialRoles : undefined}
             isDefault={isDefault}

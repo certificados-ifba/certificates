@@ -46,7 +46,7 @@ interface ICertificate {
   end_date: Date
   authorship_order: string
   additional_field: string
-  downloaded_at?: string | null
+  downloads?: Array<{ model: string; downloaded_at: string }>
   created_at: Date
   updated_at: Date
 }
@@ -56,8 +56,7 @@ interface IRequest {
 }
 
 interface IModelCriterion {
-  function: IGeneric
-  type_activity: IGeneric
+  activity: IActivity
 }
 
 interface IModel {
@@ -321,14 +320,11 @@ export const CertificateList: React.FC<Props> = ({ event, openAccordion }) => {
           return
         }
 
-        const activityTypeId = getRefId(certificate.activity?.type)
-        const functionId = getRefId(certificate.function)
+        const activityId = getRefId(certificate.activity)
         const selectedModel =
           models.find(model =>
             model.criterions?.some(
-              criterion =>
-                getRefId(criterion.type_activity) === activityTypeId &&
-                getRefId(criterion.function) === functionId
+              criterion => getRefId(criterion.activity) === activityId
             )
           ) || models.find(model => model.is_default)
 
@@ -367,7 +363,8 @@ export const CertificateList: React.FC<Props> = ({ event, openAccordion }) => {
 
         try {
           await api.patch(
-            `events/${event?.id}/certificates/${certificate.id}/download`
+            `events/${event?.id}/certificates/${certificate.id}/download`,
+            { model_id: selectedModel.id }
           )
           request.revalidate()
         } catch (markErr) {

@@ -20,14 +20,12 @@ export class ModelService {
 
   public async findModelById(id: string): Promise<IModel> {
     return await this.ModelModel.findById(id)
-      .populate('criterions.function')
-      .populate('criterions.type_activity')
+      .populate({ path: 'criterions.activity', populate: { path: 'type' } })
   }
 
   public async updateModelById(id: string, modelBody: Partial<IModel>): Promise<IModel> {
     return await this.ModelModel.findByIdAndUpdate(id, modelBody, { new: true })
-      .populate('criterions.function')
-      .populate('criterions.type_activity')
+      .populate({ path: 'criterions.activity', populate: { path: 'type' } })
   }
 
   public async removeModelById(id: string): Promise<IModel> {
@@ -48,8 +46,7 @@ export class ModelService {
     const sort = { [sortBy]: orderBy }
 
     const models = await this.ModelModel.find(query)
-      .populate('criterions.function')
-      .populate('criterions.type_activity')
+      .populate({ path: 'criterions.activity', populate: { path: 'type' } })
       .skip(perPage * (page - 1))
       .limit(perPage)
       .sort(sort)

@@ -51,9 +51,20 @@ export const CertificateSchema = new mongoose.Schema(
     additional_field: {
       type: String
     },
-    downloaded_at: {
-      type: Date,
-      default: null
+    downloads: {
+      type: [
+        {
+          model: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'Model'
+          },
+          downloaded_at: {
+            type: Date,
+            default: Date.now
+          }
+        }
+      ],
+      default: []
     }
   },
   {

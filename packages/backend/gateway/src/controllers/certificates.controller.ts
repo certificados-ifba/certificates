@@ -34,6 +34,7 @@ import { DeleteCertificateResponseDto } from '../interfaces/certificate/dto/dele
 import { TipoCertificadoIdDto } from '../interfaces/certificate/dto/event-id.dto'
 import { ListCertificateResponseDto } from '../interfaces/certificate/dto/list-certificate-response.dto'
 import { ListCertificateDto } from '../interfaces/certificate/dto/list-certificate.dto'
+import { MarkCertificateDownloadedDto } from '../interfaces/certificate/dto/mark-certificate-downloaded.dto'
 // import { TipoCertificadoIdDto } from '../interfaces/certificate/dto/event-id.dto'
 // import { ListCertificateResponseDto } from '../interfaces/certificate/dto/list-certificate-response.dto'
 // import { ListCertificateDto } from '../interfaces/certificate/dto/list-certificate.dto'
@@ -292,11 +293,13 @@ export class CertificatesController {
     type: CreateCertificateResponseDto
   })
   public async markCertificateAsDownloaded(
-    @Param() params: CertificateIdDto
+    @Param() params: CertificateIdDto,
+    @Body() body: MarkCertificateDownloadedDto
   ): Promise<CreateCertificateResponseDto> {
     const markResponse: IServiceCertificateMarkDownloadedResponse = await this.certificateServiceClient
       .send('certificate_mark_downloaded', {
-        id: params.id
+        id: params.id,
+        model_id: body.model_id
       })
       .toPromise()
 

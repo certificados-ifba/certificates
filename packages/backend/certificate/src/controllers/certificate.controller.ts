@@ -207,10 +207,11 @@ export class CertificateController {
   @MessagePattern('certificate_mark_downloaded')
   public async certificateMarkDownloaded(params: {
     id: string
+    model_id: string
   }): Promise<ICertificateMarkDownloadedResponse> {
     let result: ICertificateMarkDownloadedResponse
 
-    if (params && params.id) {
+    if (params && params.id && params.model_id) {
       try {
         const certificate = await this.certificateService.findCertificateById(
           params.id
@@ -218,7 +219,8 @@ export class CertificateController {
 
         if (certificate) {
           const updated = await this.certificateService.markCertificateAsDownloaded(
-            params.id
+            params.id,
+            params.model_id
           )
           result = {
             status: HttpStatus.OK,

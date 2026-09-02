@@ -18,8 +18,7 @@ interface IPage {
 }
 
 interface ICriterion {
-  function: Types.ObjectId
-  type_activity: Types.ObjectId
+  activity: Types.ObjectId
 }
 
 export interface IModel extends Document {

@@ -1,5 +1,5 @@
 import { ITipoCertificado } from '../tipo-certificado/tipo-certificado.interface'
-import { IGeneric } from '../generic/generic.interface'
+import { IActivity } from '../activity/activity.interface'
 
 interface ILayout {
   orientation?: string
@@ -19,8 +19,7 @@ export interface IPage {
 }
 
 export interface ICriterion {
-  function: IGeneric
-  type_activity: IGeneric
+  activity: IActivity
 }
 
 export interface IModel {

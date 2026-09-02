@@ -25,8 +25,7 @@ interface IApiModel {
     layout: any
   }>
   criterions: Array<{
-    function: any
-    type_activity: any
+    activity: any
   }>
   created_at: string
 }
@@ -40,12 +39,8 @@ function apiModelToCertificate(model: IApiModel): ICertificate {
   const roles = (model.criterions || []).map((c, index) => ({
     number: index + 1,
     activity: {
-      name: typeof c.type_activity === 'object' ? (c.type_activity?.name || '') : String(c.type_activity),
-      id: typeof c.type_activity === 'object' ? (c.type_activity?.value || c.type_activity?.id || '') : String(c.type_activity)
-    },
-    function: {
-      name: typeof c.function === 'object' ? (c.function?.name || '') : String(c.function),
-      id: typeof c.function === 'object' ? (c.function?.value || c.function?.id || '') : String(c.function)
+      name: typeof c.activity === 'object' ? (c.activity?.name || '') : String(c.activity),
+      id: typeof c.activity === 'object' ? (c.activity?.value || c.activity?.id || '') : String(c.activity)
     }
   }))
 

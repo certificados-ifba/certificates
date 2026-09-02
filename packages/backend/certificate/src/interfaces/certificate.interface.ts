@@ -15,7 +15,7 @@ export interface ICertificate extends Document {
   end_date: Date
   authorship_order: string
   additional_field: string
-  downloaded_at?: Date | null
+  downloads?: Array<{ model: Types.ObjectId; downloaded_at: Date }>
   created_at: number
   updated_at: number
 }

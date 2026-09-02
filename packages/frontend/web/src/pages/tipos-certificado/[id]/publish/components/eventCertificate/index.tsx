@@ -1,5 +1,4 @@
 import {
-  Alert,
   Button,
   Grid,
   Table
@@ -7,8 +6,8 @@ import {
 import { api } from '@services'
 import { generateCertificatePdf } from '@services/pdf'
 import Image from 'next/image'
-import { useCallback, useEffect, useState } from 'react'
-import { FiAlertCircle, FiAward, FiDownload, FiEye, FiEyeOff, FiSearch, FiUser, FiX } from 'react-icons/fi'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { FiAlertCircle, FiAward, FiCheckCircle, FiDownload, FiSearch, FiUser, FiX } from 'react-icons/fi'
 
 import { CardContainer, Container, Header } from './styles'
 
@@ -18,8 +17,7 @@ interface IGenericRef {
 }
 
 interface ICriterion {
-  function: IGenericRef
-  type_activity: IGenericRef
+  activity: IGenericRef
 }
 
 interface IApiModel {
@@ -34,6 +32,7 @@ interface IApiModel {
   criterions: ICriterion[]
   is_default: boolean
   created_at: string
+  updated_at: string
 }
 
 interface IProcessedCertificate {
@@ -41,6 +40,7 @@ interface IProcessedCertificate {
   name: string
   criterions: ICriterion[]
   is_default: boolean
+  updatedAt: string
   front?: {
     img: string
     text: string
@@ -79,6 +79,7 @@ const apiModelToCertificate = (model: IApiModel): IProcessedCertificate => {
     name: model.name,
     criterions: model.criterions || [],
     is_default: !!model.is_default,
+    updatedAt: model.updated_at,
     pages: model.pages,
     front: frontPage
       ? { img: frontPage.image ? `${STORAGE_URL}/upload/${frontPage.image}` : '', text: frontPage.text, layout: frontPage.layout }
@@ -93,7 +94,7 @@ interface IParticipant {
   id: string
   certificateId: string
   name: string
-  activityTypeName: string
+  activityName: string
   functionName: string
   workload?: number
   start_date?: string
@@ -101,10 +102,21 @@ interface IParticipant {
   authorship_order?: string
   additional_field?: string
   key?: string
-  downloaded_at?: string | null
 }
 
 const getRefId = (value: any) => String(value?.id || value?._id || value || '')
+
+const isDownloadedForModel = (certificate: any, model: IProcessedCertificate): boolean => {
+  const download = (certificate.downloads || []).find(
+    (item: any) => getRefId(item.model) === model.id
+  )
+  if (!download?.downloaded_at) return false
+  if (model.updatedAt && new Date(download.downloaded_at) < new Date(model.updatedAt)) {
+    // O modelo foi editado depois desse download: considera desatualizado.
+    return false
+  }
+  return true
+}
 
 const substituteCertificateText = (
   html: string,
@@ -135,6 +147,7 @@ const substituteCertificateText = (
 export const EventCertificate: React.FC<Props> = ({ event }) => {
   const [certificateList, setCertificateList] = useState<IProcessedCertificate[]>([])
   const [allCertificates, setAllCertificates] = useState<any[]>([])
+  const [activities, setActivities] = useState<IGenericRef[]>([])
   const [loadingModels, setLoadingModels] = useState(true)
 
   // Seleção de participante
@@ -145,18 +158,21 @@ export const EventCertificate: React.FC<Props> = ({ event }) => {
   const [downloadingParticipantId, setDownloadingParticipantId] = useState<string | null>(null)
 
   const [certificateSelected, setCertificateSelected] = useState<IProcessedCertificate | null>(null)
+  const [activitySelected, setActivitySelected] = useState<string>('')
 
   useEffect(() => {
     const loadModels = async () => {
       if (!event?.id) return
       try {
         setLoadingModels(true)
-        const [modelsRes, certsRes] = await Promise.all([
+        const [modelsRes, certsRes, activitiesRes] = await Promise.all([
           api.get(`tipos-certificado/${event.id}/models`),
-          api.get(`tipos-certificado/${event.id}/certificates`, { params: { take: 100, skip: 0 } })
+          api.get(`tipos-certificado/${event.id}/certificates`, { params: { take: 100, skip: 0 } }),
+          api.get(`tipos-certificado/${event.id}/activities`, { params: { sort_by: 'name', order_by: 'ASC' } })
         ])
         const models: IApiModel[] = modelsRes?.data?.data || []
         setAllCertificates(certsRes?.data?.data || [])
+        setActivities(activitiesRes?.data?.data || [])
         setCertificateList(models.map(apiModelToCertificate))
       } catch (err) {
         console.error('Erro ao carregar modelos:', err)
@@ -167,17 +183,29 @@ export const EventCertificate: React.FC<Props> = ({ event }) => {
     if (event) loadModels()
   }, [event])
 
+  const defaultModelCriterions = useMemo<ICriterion[]>(() => {
+    const coveredActivityIds = new Set(
+      certificateList
+        .filter(certificate => !certificate.is_default)
+        .flatMap(certificate => certificate.criterions.map(criterion => getRefId(criterion.activity)))
+    )
+    return activities
+      .filter(activity => !coveredActivityIds.has(getRefId(activity)))
+      .map(activity => ({ activity }))
+  }, [certificateList, activities])
+
   const getMatchingCertificates = useCallback((certs: any[], criterion?: ICriterion) => {
     if (!criterion) {
       // Modelo padrão (sem critério específico): todos os participantes do evento.
       return certs
     }
-    const key = `${getRefId(criterion.type_activity)}::${getRefId(criterion.function)}`
-    return certs.filter(c => `${getRefId(c.activity?.type)}::${getRefId(c.function)}` === key)
+    const key = getRefId(criterion.activity)
+    return certs.filter(c => getRefId(c.activity) === key)
   }, [])
 
   const handleOpenParticipantModal = useCallback(async (certificate: IProcessedCertificate, criterion?: ICriterion) => {
     setCertificateSelected(certificate)
+    setActivitySelected(criterion?.activity?.name || '')
     setParticipantSearch('')
     setOpenParticipantModal(true)
     if (!event?.id) return
@@ -200,15 +228,14 @@ export const EventCertificate: React.FC<Props> = ({ event }) => {
           id: c.participant.id,
           certificateId: c.id,
           name: c.participant.name,
-          activityTypeName: c.activity?.type?.name || '',
+          activityName: c.activity?.name || '',
           functionName: c.function?.name || '',
           workload: c.workload,
           start_date: c.start_date,
           end_date: c.end_date,
           authorship_order: c.authorship_order,
           additional_field: c.additional_field,
-          key: c.key,
-          downloaded_at: c.downloaded_at
+          key: c.key
         })
       }
 
@@ -224,6 +251,7 @@ export const EventCertificate: React.FC<Props> = ({ event }) => {
   const handleCloseParticipantModal = useCallback(() => {
     setOpenParticipantModal(false)
     setCertificateSelected(null)
+    setActivitySelected('')
   }, [])
 
   const handleSelectParticipant = useCallback(async (participant: IParticipant) => {
@@ -231,7 +259,7 @@ export const EventCertificate: React.FC<Props> = ({ event }) => {
     setDownloadingParticipantId(participant.id)
     try {
       const generationData = {
-        tipoAtividade: participant.activityTypeName,
+        tipoAtividade: participant.activityName,
         funcao: participant.functionName
       }
 
@@ -247,15 +275,25 @@ export const EventCertificate: React.FC<Props> = ({ event }) => {
         pages
       })
 
+      const nowIso = new Date().toISOString()
       try {
-        await api.patch(`tipos-certificado/${event.id}/certificates/${participant.certificateId}/download`)
+        await api.patch(
+          `tipos-certificado/${event.id}/certificates/${participant.certificateId}/download`,
+          { model_id: certificateSelected.id }
+        )
       } catch (markErr) {
         console.error('Erro ao marcar certificado como baixado:', markErr)
       }
 
-      const nowIso = new Date().toISOString()
       setAllCertificates(list =>
-        list.map(c => c.id === participant.certificateId ? { ...c, downloaded_at: nowIso } : c)
+        list.map(c => {
+          if (c.id !== participant.certificateId) return c
+          const downloads = (c.downloads || []).filter(
+            (item: any) => getRefId(item.model) !== certificateSelected.id
+          )
+          downloads.push({ model: certificateSelected.id, downloaded_at: nowIso })
+          return { ...c, downloads }
+        })
       )
       setOpenParticipantModal(false)
     } catch (err) {
@@ -267,7 +305,7 @@ export const EventCertificate: React.FC<Props> = ({ event }) => {
 
   const filteredParticipants = participantList.filter(p => {
     const q = participantSearch.toLowerCase()
-    const combinationText = `${p.activityTypeName} ${p.functionName}`
+    const combinationText = `${p.activityName} ${p.functionName}`
     return (
       p.name.toLowerCase().includes(q) ||
       combinationText.toLowerCase().includes(q)
@@ -278,8 +316,7 @@ export const EventCertificate: React.FC<Props> = ({ event }) => {
     <Container>
       <Grid cols={3}>
         {certificateList.map((certificate) => {
-          const isDefaultDownloaded = certificate.is_default &&
-            getMatchingCertificates(allCertificates).some(c => !!c.downloaded_at)
+          const rowCriterions = certificate.is_default ? defaultModelCriterions : certificate.criterions
 
           return (
             <CardContainer key={certificate.id}>
@@ -288,55 +325,83 @@ export const EventCertificate: React.FC<Props> = ({ event }) => {
                   <FiAward size={20} />
                 </div>
                 <h2>{certificate.name}</h2>
+                <span
+                  style={{
+                    marginLeft: 10,
+                    marginTop: 'auto',
+                    marginBottom: 'auto',
+                    padding: '2px 8px',
+                    borderRadius: 12,
+                    fontSize: '0.7rem',
+                    fontWeight: 600,
+                    whiteSpace: 'nowrap',
+                    color: certificate.is_default ? '#a86b00' : '#1a5fb4',
+                    backgroundColor: certificate.is_default ? '#fff3cd' : '#e3edfb'
+                  }}
+                >
+                  {certificate.is_default ? 'Modelo Padrão' : 'Modelo com Critério'}
+                </span>
               </Header>
-              <main style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '200px', overflow: 'hidden' }}>
+              <main style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 12, minHeight: '200px', overflow: 'hidden' }}>
                 {certificate.front?.img ? (
-                  <Image
-                    src={certificate.front.img}
-                    alt={certificate.name}
-                    width={300}
-                    height={200}
-                    unoptimized
-                    style={{ objectFit: 'contain', maxWidth: '100%', maxHeight: '200px' }}
-                  />
+                  <figure style={{ margin: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, flex: 1, minWidth: 0 }}>
+                    <Image
+                      src={certificate.front.img}
+                      alt={`${certificate.name} - frente`}
+                      width={300}
+                      height={200}
+                      unoptimized
+                      style={{ objectFit: 'contain', maxWidth: '100%', maxHeight: '200px' }}
+                    />
+                    {certificate.verse?.img && (
+                      <figcaption style={{ fontSize: '0.7rem', color: '#718096' }}>Frente</figcaption>
+                    )}
+                  </figure>
                 ) : (
                   <p style={{ color: '#999' }}>Sem imagem</p>
                 )}
+                {certificate.verse?.img && (
+                  <figure style={{ margin: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, flex: 1, minWidth: 0 }}>
+                    <Image
+                      src={certificate.verse.img}
+                      alt={`${certificate.name} - verso`}
+                      width={300}
+                      height={200}
+                      unoptimized
+                      style={{ objectFit: 'contain', maxWidth: '100%', maxHeight: '200px' }}
+                    />
+                    <figcaption style={{ fontSize: '0.7rem', color: '#718096' }}>Verso</figcaption>
+                  </figure>
+                )}
               </main>
               <div style={{ padding: '0 15px 15px' }}>
-                {certificate.is_default ? (
-                  <Alert type="warning" icon={FiAlertCircle}>
-                    Atenção! Este certificado será utilizado para atividades
-                    e funções que não possuem um modelo definido.<br />
-                    <b>Verifique se o texto é adequado para esses casos.</b>
-                  </Alert>
-                ) : (
+                {rowCriterions.length > 0 ? (
                   <Table>
                     <thead>
                       <tr>
                         <th>Nº</th>
-                        <th>Tipo de Atividade</th>
-                        <th>Função</th>
+                        <th>Atividade</th>
                         <th>Status</th>
                         <th></th>
                       </tr>
                     </thead>
                     <tbody>
-                      {certificate.criterions.map((criterion, index) => {
+                      {rowCriterions.map((criterion, index) => {
                         const isCriterionDownloaded = getMatchingCertificates(allCertificates, criterion)
-                          .some(c => !!c.downloaded_at)
+                          .some(c => isDownloadedForModel(c, certificate))
 
                         return (
-                          <tr key={`${criterion.type_activity?.id}-${criterion.function?.id}-${index}`}>
+                          <tr key={`${criterion.activity?.id}-${index}`}>
                             <td>{index + 1}</td>
-                            <td>{criterion.type_activity?.name}</td>
-                            <td>{criterion.function?.name}</td>
+                            <td>{criterion.activity?.name}</td>
                             <td>
                               <span
                                 title={isCriterionDownloaded ? 'Certificado já baixado' : 'Certificado ainda não baixado'}
-                                style={{ display: 'inline-flex', color: isCriterionDownloaded ? '#2f9e44' : '#9e9e9e' }}
+                                style={{ display: 'inline-flex' }}
                               >
-                                {isCriterionDownloaded ? <FiEye size={18} /> : <FiEyeOff size={18} />}
+                                {isCriterionDownloaded
+                                  ? <FiCheckCircle size={18} color="#2f9e44" />
+                                  : <FiAlertCircle size={18} color="#f0b400" /> }
                               </span>
                             </td>
                             <td>
@@ -347,6 +412,7 @@ export const EventCertificate: React.FC<Props> = ({ event }) => {
                                 size="small"
                                 color="info"
                                 type="button"
+                                title="Baixar certificado"
                                 onClick={() => handleOpenParticipantModal(certificate, criterion)}
                               >
                                 <FiDownload size={18} />
@@ -357,29 +423,12 @@ export const EventCertificate: React.FC<Props> = ({ event }) => {
                       })}
                     </tbody>
                   </Table>
+                ) : certificate.is_default && (
+                  <p style={{ color: '#718096', fontSize: '0.85rem', marginTop: '0.75rem' }}>
+                    Todas as atividades já possuem um modelo específico.
+                  </p>
                 )}
               </div>
-              {certificate.is_default && (
-                <footer>
-                  <span
-                    title={isDefaultDownloaded ? 'Certificado já baixado' : 'Certificado ainda não baixado'}
-                    style={{ display: 'inline-flex', color: isDefaultDownloaded ? '#2f9e44' : '#9e9e9e' }}
-                  >
-                    {isDefaultDownloaded ? <FiEye size={22} /> : <FiEyeOff size={22} />}
-                  </span>
-                  <Button
-                    inline
-                    ghost
-                    square
-                    size="small"
-                    color="info"
-                    type="button"
-                    onClick={() => handleOpenParticipantModal(certificate)}
-                  >
-                    <FiDownload size={18} />
-                  </Button>
-                </footer>
-              )}
             </CardContainer>
           )
         })}
@@ -415,9 +464,16 @@ export const EventCertificate: React.FC<Props> = ({ event }) => {
               borderBottom: '1px solid #e0e0e0',
               flexShrink: 0
             }}>
-              <h2 style={{ margin: 0, fontSize: '1rem', display: 'flex', alignItems: 'center', gap: 8 }}>
-                <FiUser size={18} />
-                Selecionar participante
+              <h2 style={{ margin: 0, fontSize: '1rem' }}>
+                <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <FiUser size={18} />
+                  Selecionar participante
+                </span>
+                {activitySelected && (
+                  <span style={{ display: 'block', fontSize: '0.78rem', fontWeight: 400, color: '#888', marginTop: 4 }}>
+                    Atividade: {activitySelected}
+                  </span>
+                )}
               </h2>
               <Button inline onClick={handleCloseParticipantModal} color="secondary" type="button" outline>
                 <FiX size={18} />
@@ -451,7 +507,7 @@ export const EventCertificate: React.FC<Props> = ({ event }) => {
                 <p style={{ textAlign: 'center', color: '#999', padding: '24px 0' }}>Carregando participantes...</p>
               ) : filteredParticipants.length === 0 ? (
                 <p style={{ textAlign: 'center', color: '#999', padding: '24px 0' }}>
-                  {participantSearch ? 'Nenhum participante encontrado.' : 'Nenhum participante cadastrado.'}
+                  {participantSearch ? 'Nenhum participante encontrado.' : 'Nenhum participante cadastrado nessa atividade.'}
                 </p>
               ) : (
                 filteredParticipants.map((participant) => (
@@ -484,9 +540,9 @@ export const EventCertificate: React.FC<Props> = ({ event }) => {
                         {participant.name}
                         {downloadingParticipantId === participant.id && ' — gerando PDF...'}
                       </span>
-                      {(participant.activityTypeName || participant.functionName) && (
+                      {participant.functionName && (
                         <span style={{ fontSize: '0.78rem', color: '#888' }}>
-                          {[participant.activityTypeName, participant.functionName].filter(Boolean).join(' como ')}
+                          Função: {participant.functionName}
                         </span>
                       )}
                     </div>
